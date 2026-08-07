@@ -10,8 +10,8 @@ const FALLBACK_DATA = {
   gameTitle: 'Untitled Visual Novel',
   choicePoints: [
     { id: 'cp1', label: 'Choice 1', options: [
-      { id: 'cp1o1', text: 'Ask her for dinner' },
-      { id: 'cp1o2', text: 'Go straight to home' }
+      { id: 'cp1o1', text: 'Join the Oda Bakufu.' },
+      { id: 'cp1o2', text: 'Join the Shinsengumi.' }
     ]},
     { id: 'cp2', label: 'Choice 2', options: [
       { id: 'cp2o1', text: 'Stand for her' },
@@ -157,9 +157,18 @@ function renderChoicePoints() {
       <div class="cp-card" data-id="${escapeAttr(cp.id)}">
         <div class="cp-eyebrow">Choice ${String(idx + 1).padStart(2, '0')}</div>
         <div class="cp-label">${escapeHtml(cp.label)}</div>
-        <div class="cp-options">
-          ${cp.options.map(o => `<span class="cp-option-pill">${escapeHtml(o.text)}</span>`).join('')}
+        
+        <!-- Implementasi tombol pilihan ala FGO -->
+        <div class="fgo-options-container">
+          ${cp.options.map(o => `
+            <div class="fgo-button-wrap">
+              <div class="fgo-button-inner">
+                <span>${escapeHtml(o.text)}</span>
+              </div>
+            </div>
+          `).join('')}
         </div>
+
         <div class="card-meta">${used ? `Used in ${used} route${used === 1 ? '' : 's'}` : 'Not used in any route yet'}</div>
         <div class="footer-actions">
           <button type="button" class="btn-icon edit" data-role="cp-edit" title="Edit">&#9998;</button>
