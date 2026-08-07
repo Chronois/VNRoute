@@ -1,6 +1,6 @@
 /* =====================================================
    VNRoute — Visual Novel Route Tracker
-   Multi-VN Architecture with localStorage
+   Multi-VN Architecture with localStorage & Custom Modals
 ===================================================== */
 
 const LIB_KEY = 'vnroute_library';
@@ -22,16 +22,74 @@ let editingRouteId = null;
 let routeStepsDraft = [];
 let sceneSort = { key: 'name', dir: 'asc' };
 
+/* ---------------- Custom Modal Logic ---------------- */
+
+function showCustomModal({ title, message, type, defaultValue = '' }) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('customModalOverlay');
+    const titleEl = document.getElementById('customModalTitle');
+    const messageEl = document.getElementById('customModalMessage');
+    const inputEl = document.getElementById('customModalInput');
+    const btnCancel = document.getElementById('customModalCancel');
+    const btnConfirm = document.getElementById('customModalConfirm');
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+
+    // Reset visibility
+    if (type === 'alert') {
+      inputEl.hidden = true;
+      btnCancel.hidden = true;
+    } else if (type === 'confirm') {
+      inputEl.hidden = true;
+      btnCancel.hidden = false;
+    } else if (type === 'prompt') {
+      inputEl.hidden = false;
+      inputEl.value = defaultValue;
+      btnCancel.hidden = false;
+    }
+
+    overlay.hidden = false;
+    if (type === 'prompt') {
+      inputEl.focus();
+      inputEl.select();
+    }
+
+    const cleanup = () => {
+      overlay.hidden = true;
+      btnConfirm.onclick = null;
+      btnCancel.onclick = null;
+      inputEl.onkeydown = null;
+    };
+
+    btnConfirm.onclick = () => {
+      cleanup();
+      if (type === 'prompt') resolve(inputEl.value);
+      else resolve(true);
+    };
+
+    btnCancel.onclick = () => {
+      cleanup();
+      resolve(type === 'prompt' ? null : false);
+    };
+
+    // Allow pressing "Enter" on input
+    if (type === 'prompt') {
+      inputEl.onkeydown = (e) => {
+        if (e.key === 'Enter') btnConfirm.click();
+      };
+    }
+  });
+}
+
 /* ---------------- persistence ---------------- */
 
 async function loadState() {
-  // 1. Load library
   const libRaw = localStorage.getItem(LIB_KEY);
   if (libRaw) {
     try { vnLibrary = JSON.parse(libRaw); } catch(e){}
   }
   
-  // 2. Init if empty
   if (!vnLibrary || vnLibrary.length === 0) {
     const newId = uid('vn');
     vnLibrary = [{ id: newId, title: 'New Visual Novel' }];
@@ -48,13 +106,11 @@ async function loadState() {
   
   renderVnSelector();
   
-  // 3. Load specific VN data
   const dataRaw = localStorage.getItem('vnroute_data_' + activeVnId);
   if (dataRaw) {
     try { state = normalizeState(JSON.parse(dataRaw)); return; } catch(e){}
   }
   
-  // If no data found for this VN, start empty
   state = normalizeState({}); 
 }
 
@@ -139,9 +195,15 @@ document.getElementById('vnSelector').addEventListener('change', (e) => {
   loadState().then(() => renderAll());
 });
 
-document.getElementById('btnNewVn').addEventListener('click', () => {
-  const title = prompt('Enter name for the new Visual Novel:', 'New Visual Novel');
+document.getElementById('btnNewVn').addEventListener('click', async () => {
+  const title = await showCustomModal({
+    title: 'Create New VN',
+    message: 'Enter name for the new Visual Novel:',
+    type: 'prompt',
+    defaultValue: 'New Visual Novel'
+  });
   if (!title) return;
+  
   const newId = uid('vn');
   vnLibrary.push({ id: newId, title: title });
   activeVnId = newId;
@@ -155,10 +217,16 @@ document.getElementById('btnNewVn').addEventListener('click', () => {
   showToast('New Visual Novel added.');
 });
 
-document.getElementById('btnRenameVn').addEventListener('click', () => {
+document.getElementById('btnRenameVn').addEventListener('click', async () => {
   const vn = vnLibrary.find(v => v.id === activeVnId);
-  const title = prompt('Rename Visual Novel:', vn.title);
+  const title = await showCustomModal({
+    title: 'Rename VN',
+    message: 'Rename Visual Novel:',
+    type: 'prompt',
+    defaultValue: vn.title
+  });
   if (!title || title === vn.title) return;
+  
   vn.title = title;
   saveLibrary();
   renderVnSelector();
@@ -166,12 +234,22 @@ document.getElementById('btnRenameVn').addEventListener('click', () => {
   showToast('Visual Novel renamed.');
 });
 
-document.getElementById('btnDeleteVn').addEventListener('click', () => {
+document.getElementById('btnDeleteVn').addEventListener('click', async () => {
   if (vnLibrary.length <= 1) {
-    alert('You must have at least one Visual Novel. Cannot delete the only one.');
+    await showCustomModal({
+      title: 'Action Denied',
+      message: 'You must have at least one Visual Novel. Cannot delete the only one.',
+      type: 'alert'
+    });
     return;
   }
-  if (!confirm('Are you sure you want to delete this Visual Novel and all its data? This cannot be undone.')) return;
+  
+  const confirmed = await showCustomModal({
+    title: 'Delete Visual Novel',
+    message: 'Are you sure you want to delete this Visual Novel and all its data? This cannot be undone.',
+    type: 'confirm'
+  });
+  if (!confirmed) return;
   
   vnLibrary = vnLibrary.filter(v => v.id !== activeVnId);
   localStorage.removeItem('vnroute_data_' + activeVnId);
@@ -307,9 +385,17 @@ function submitCpForm(e) {
   refreshRouteFormChoicePointRefs();
 }
 
-function deleteCp(id) {
+async function deleteCp(id) {
   const used = countRoutesUsingCp(id);
-  if (used && !confirm(`This choice point is used in ${used} route(s). Delete it anyway? Those steps will show as "Deleted choice".`)) return;
+  if (used) {
+    const confirmed = await showCustomModal({
+      title: 'Warning',
+      message: `This choice point is used in ${used} route(s). Delete it anyway? Those steps will show as "Deleted choice".`,
+      type: 'confirm'
+    });
+    if (!confirmed) return;
+  }
+  
   state.choicePoints = state.choicePoints.filter(c => c.id !== id);
   saveState();
   if (editingCpId === id) resetCpForm();
@@ -429,9 +515,17 @@ function submitSceneForm(e) {
   refreshRouteFormSceneRefs();
 }
 
-function deleteScene(id) {
+async function deleteScene(id) {
   const used = countRoutesUsingScene(id);
-  if (used && !confirm(`This scene is used in ${used} route(s). Delete it anyway? Those spots will show as "Deleted scene".`)) return;
+  if (used) {
+    const confirmed = await showCustomModal({
+      title: 'Warning',
+      message: `This scene is used in ${used} route(s). Delete it anyway? Those spots will show as "Deleted scene".`,
+      type: 'confirm'
+    });
+    if (!confirmed) return;
+  }
+  
   state.scenes = state.scenes.filter(s => s.id !== id);
   saveState();
   if (editingSceneId === id) resetSceneForm();
@@ -646,8 +740,14 @@ function submitRouteForm(e) {
   renderChoicePoints();
 }
 
-function deleteRoute(id) {
-  if (!confirm('Delete this route? This cannot be undone.')) return;
+async function deleteRoute(id) {
+  const confirmed = await showCustomModal({
+    title: 'Delete Route',
+    message: 'Delete this route? This cannot be undone.',
+    type: 'confirm'
+  });
+  if (!confirmed) return;
+  
   state.routes = state.routes.filter(r => r.id !== id);
   saveState();
   if (editingRouteId === id) resetRouteForm();
@@ -688,14 +788,20 @@ function importData(file) {
       renderAll();
       showToast('Data imported to current VN successfully.');
     } catch (e) {
-      showToast('That file doesn\u2019t look like a VNRoute backup.');
+      showToast('That file doesn\'t look like a VNRoute backup.');
     }
   };
   reader.readAsText(file);
 }
 
-function clearData() {
-  if (!confirm('Clear all data for this Visual Novel? This cannot be undone.')) return;
+async function clearData() {
+  const confirmed = await showCustomModal({
+    title: 'Clear Data',
+    message: 'Clear all data for this Visual Novel? This cannot be undone.',
+    type: 'confirm'
+  });
+  if (!confirmed) return;
+  
   state = normalizeState({});
   saveState();
   renderAll();
