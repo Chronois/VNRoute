@@ -575,11 +575,18 @@ function renderRoutes() {
       const cp = findCp(s.choicePointId);
       const opt = findOption(cp, s.optionId);
       const scene = findScene(s.sceneId);
-      let html = `<div class="thread-node is-choice">
-        <span class="node-dot"></span>
-        <span class="node-choice-label">${escapeHtml(cp ? cp.label : 'Deleted choice')}</span>
-        <span class="node-option-text">${escapeHtml(opt ? opt.text : 'Deleted option')}</span>
-      </div>`;
+      let html = '';
+      
+      // Render titik Choice jika ada
+      if (s.choicePointId) {
+        html += `<div class="thread-node is-choice">
+          <span class="node-dot"></span>
+          <span class="node-choice-label">${escapeHtml(cp ? cp.label : 'Deleted choice')}</span>
+          <span class="node-option-text">${escapeHtml(opt ? opt.text : 'Deleted option')}</span>
+        </div>`;
+      }
+      
+      // Render titik Scene jika ada
       if (s.sceneId) {
         html += `<div class="thread-node is-scene">
           <span class="node-dot"></span>
@@ -623,47 +630,53 @@ function sceneSelectOptions(selectedId, includeNone) {
 
 function renderRouteStepsEditor() {
   const wrap = document.getElementById('routeStepsEditor');
-  if (!state.choicePoints.length) {
-    wrap.innerHTML = `<div class="empty-state" style="grid-column:auto">Add a choice point on the Choices tab first.</div>`;
-    return;
-  }
-  wrap.innerHTML = routeStepsDraft.map((step, i) => {
-    const cp = findCp(step.choicePointId) || state.choicePoints[0];
-    const cpOptionsHtml = state.choicePoints.map(c => `<option value="${escapeAttr(c.id)}" ${c.id === cp.id ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('');
-    const optOptionsHtml = cp.options.map(o => `<option value="${escapeAttr(o.id)}" ${o.id === step.optionId ? 'selected' : ''}>${escapeHtml(o.text)}</option>`).join('');
-    return `
-      <div class="step-row" data-idx="${i}">
-        <select data-role="step-cp">${cpOptionsHtml}</select>
-        <select data-role="step-opt">${optOptionsHtml}</select>
-        <select data-role="step-scene">${sceneSelectOptions(step.sceneId, true)}</select>
-        <button type="button" class="row-remove" data-role="step-remove" aria-label="Remove step">&#10005;</button>
-      </div>
-    `;
-  }).join('');
+  
+  if (!routeStepsDraft.length) {
+    wrap.innerHTML = `<div class="empty-state" style="grid-column:auto">No steps added yet.</div>`;
+  } else {
+    wrap.innerHTML = routeStepsDraft.map((step, i) => {
+      // Pilihan Choice Point kini memiliki opsi kosong
+      const cpOptionsHtml = `<option value="">— No Choice —</option>` + state.choicePoints.map(c => `<option value="${escapeAttr(c.id)}" ${c.id === step.choicePointId ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('');
+      
+      let optOptionsHtml = `<option value="">— No Option —</option>`;
+      const cp = findCp(step.choicePointId);
+      if (cp) {
+        optOptionsHtml = cp.options.map(o => `<option value="${escapeAttr(o.id)}" ${o.id === step.optionId ? 'selected' : ''}>${escapeHtml(o.text)}</option>`).join('');
+      }
 
-  wrap.querySelectorAll('[data-role="step-cp"]').forEach((sel, i) => {
-    sel.addEventListener('change', () => {
-      const cp = findCp(sel.value);
-      routeStepsDraft[i].choicePointId = sel.value;
-      routeStepsDraft[i].optionId = cp && cp.options[0] ? cp.options[0].id : '';
-      renderRouteStepsEditor();
+      return `
+        <div class="step-row" data-idx="${i}">
+          <select data-role="step-cp">${cpOptionsHtml}</select>
+          <select data-role="step-opt" ${!cp ? 'disabled' : ''}>${optOptionsHtml}</select>
+          <select data-role="step-scene">${sceneSelectOptions(step.sceneId, true)}</select>
+          <button type="button" class="row-remove" data-role="step-remove" aria-label="Remove step">&#10005;</button>
+        </div>
+      `;
+    }).join('');
+
+    wrap.querySelectorAll('[data-role="step-cp"]').forEach((sel, i) => {
+      sel.addEventListener('change', () => {
+        const cp = findCp(sel.value);
+        routeStepsDraft[i].choicePointId = sel.value;
+        routeStepsDraft[i].optionId = cp && cp.options[0] ? cp.options[0].id : '';
+        renderRouteStepsEditor();
+      });
     });
-  });
-  wrap.querySelectorAll('[data-role="step-opt"]').forEach((sel, i) => {
-    sel.addEventListener('change', () => { routeStepsDraft[i].optionId = sel.value; });
-  });
-  wrap.querySelectorAll('[data-role="step-scene"]').forEach((sel, i) => {
-    sel.addEventListener('change', () => { routeStepsDraft[i].sceneId = sel.value; });
-  });
-  wrap.querySelectorAll('[data-role="step-remove"]').forEach((btn, i) => {
-    btn.addEventListener('click', () => { routeStepsDraft.splice(i, 1); renderRouteStepsEditor(); });
-  });
+    wrap.querySelectorAll('[data-role="step-opt"]').forEach((sel, i) => {
+      sel.addEventListener('change', () => { routeStepsDraft[i].optionId = sel.value; });
+    });
+    wrap.querySelectorAll('[data-role="step-scene"]').forEach((sel, i) => {
+      sel.addEventListener('change', () => { routeStepsDraft[i].sceneId = sel.value; });
+    });
+    wrap.querySelectorAll('[data-role="step-remove"]').forEach((btn, i) => {
+      btn.addEventListener('click', () => { routeStepsDraft.splice(i, 1); renderRouteStepsEditor(); });
+    });
+  }
 }
 
 function addRouteStep() {
-  if (!state.choicePoints.length) { showToast('Add a choice point first.'); return; }
-  const cp = state.choicePoints[0];
-  routeStepsDraft.push({ choicePointId: cp.id, optionId: cp.options[0] ? cp.options[0].id : '', sceneId: '' });
+  // Langsung tambahkan step kosong, tidak wajib ada choice yang dipilih
+  routeStepsDraft.push({ choicePointId: '', optionId: '', sceneId: '' });
   renderRouteStepsEditor();
 }
 
@@ -685,9 +698,8 @@ function refreshRouteFormSceneRefs() {
 function resetRouteForm() {
   editingRouteId = null;
   document.getElementById('routeNameInput').value = '';
-  routeStepsDraft = state.choicePoints.length
-    ? [{ choicePointId: state.choicePoints[0].id, optionId: state.choicePoints[0].options[0] ? state.choicePoints[0].options[0].id : '', sceneId: '' }]
-    : [];
+  // Default form sekarang berupa step kosong
+  routeStepsDraft = [{ choicePointId: '', optionId: '', sceneId: '' }];
   renderRouteStepsEditor();
   refreshRouteEndingSceneSelect('');
   document.getElementById('routeEndingType').value = 'normal';
@@ -719,10 +731,17 @@ function submitRouteForm(e) {
   const endingType = document.getElementById('routeEndingType').value;
 
   if (!name) { showToast('Give this route a name.'); return; }
-  if (!routeStepsDraft.length) { showToast('Add at least one step.'); return; }
+  
+  // Validasi: Abaikan step yang kosong (tanpa choice dan tanpa scene)
+  const validSteps = routeStepsDraft.filter(s => s.choicePointId || s.sceneId);
+  if (!validSteps.length) { showToast('Add at least one choice or scene step.'); return; }
   if (!endingSceneId) { showToast('Pick the scene this route ends on.'); return; }
 
-  const steps = routeStepsDraft.map(s => ({ choicePointId: s.choicePointId, optionId: s.optionId, sceneId: s.sceneId || '' }));
+  const steps = validSteps.map(s => ({ 
+    choicePointId: s.choicePointId || '', 
+    optionId: s.optionId || '', 
+    sceneId: s.sceneId || '' 
+  }));
 
   if (editingRouteId) {
     const r = state.routes.find(x => x.id === editingRouteId);
