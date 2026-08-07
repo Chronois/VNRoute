@@ -714,3 +714,74 @@ main { position: relative; z-index: 1; }
   .util-bar { font-size: 10px; padding: 8px 16px; }
   .vn-selector-group { flex-wrap: wrap; justify-content: center; }
 }
+
+/* ---------------------------------------------------
+   Custom Modal (Pop-up)
+--------------------------------------------------- */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(4, 9, 20, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.2s var(--ease);
+}
+.custom-modal-overlay[hidden] {
+  display: none;
+  opacity: 0;
+}
+.custom-modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  width: 90%;
+  max-width: 420px;
+  padding: 24px;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8);
+  animation: modalPop 0.3s var(--ease);
+}
+@keyframes modalPop {
+  from { transform: scale(0.95) translateY(10px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.custom-modal-header {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary-accent);
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+.custom-modal-body p {
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.custom-modal-body input {
+  width: 100%;
+  background: rgba(4, 9, 20, 0.6);
+  border: 1px solid var(--border-strong);
+  color: #fff;
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  outline: none;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  margin-bottom: 20px;
+  transition: border-color 0.2s;
+}
+.custom-modal-body input:focus {
+  border-color: var(--primary-accent);
+  background: rgba(14, 30, 61, 0.9);
+}
+.custom-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
