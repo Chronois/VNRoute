@@ -3,43 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VNRoute</title>
+    <title>VNRoute - Tracker</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="vn-container">
-        <header>
-            <h1>VNRoute</h1>
-            <p class="subtitle">Visual Novel Route Tracker</p>
+    <div class="vn-bg"></div>
+    
+    <div class="game-container">
+        <!-- Header -->
+        <header class="game-header">
+            <h1>VNROUTE</h1>
+            <p>Visual Novel Route Tracker</p>
         </header>
 
-        <main>
-            <!-- Kontainer Pilihan Dinamis -->
-            <section id="choices-container" class="choices-container">
-                <!-- Pilihan akan di-render oleh JavaScript di sini -->
-            </section>
-
-            <button class="btn-add-main" onclick="addChoiceGroup()">+ Tambah Choice Group Baru</button>
-
-            <!-- Section Hasil / Result -->
-            <section class="result-container">
-                <div class="result-header">
-                    <span class="result-title">Result Log</span>
-                    <div class="route-controls">
-                        <button onclick="saveRouteLine()" class="btn-control">Simpan Baris</button>
-                        <button onclick="clearCurrentRoute()" class="btn-control btn-danger">Hapus Aktif</button>
-                    </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel: Choices -->
+            <div class="choices-panel">
+                <div class="panel-header">
+                    <h2>Route Map</h2>
+                    <button class="btn-add-group" onclick="addChoiceGroup()">
+                        <i class="fa-solid fa-folder-plus"></i> Tambah Group
+                    </button>
                 </div>
                 
-                <div class="dialogue-box">
-                    <div class="dialogue-text" id="route-log">
-                        <!-- History rute yang sudah disimpan akan muncul di sini -->
-                    </div>
-                    <!-- Rute yang sedang berjalan -->
-                    <div class="dialogue-text active-route" id="current-route-text"></div>
-                    <div class="vn-cursor">▼</div>
+                <div id="choices-container" class="choices-container">
+                    <!-- Choices will be rendered here via JS -->
                 </div>
-            </section>
+            </div>
+
+            <!-- Right/Bottom Panel: VN Dialogue Box -->
+            <div class="dialogue-panel">
+                <div class="vn-dialogue-wrapper">
+                    <!-- Nameplate -->
+                    <div class="vn-nameplate">System Log</div>
+                    
+                    <!-- Dialogue Box -->
+                    <div class="vn-dialogue-box">
+                        <div class="controls-overlay">
+                            <button class="btn-vn btn-vn-save" onclick="saveRouteLine()"><i class="fa-solid fa-check"></i> Simpan Baris</button>
+                            <button class="btn-vn btn-vn-clear" onclick="clearCurrentRoute()"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                        </div>
+                        
+                        <div class="dialogue-content">
+                            <div id="route-history" class="route-history">
+                                <!-- Saved routes go here -->
+                            </div>
+                            <div id="current-route" class="current-route">
+                                <span class="typing-text">Silakan klik tombol "Rekam" pada pilihan...</span>
+                            </div>
+                        </div>
+                        <div class="vn-cursor"><i class="fa-solid fa-caret-down"></i></div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 

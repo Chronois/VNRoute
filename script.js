@@ -1,4 +1,4 @@
-// State awal berdasarkan referensi gambar
+// Initial Default Data
 let vnData = [
     {
         title: "Choice 1",
@@ -20,8 +20,8 @@ let vnData = [
 let currentRoute = [];
 let savedRoutes = [];
 
-// Merender UI berdasarkan data
-function renderChoices() {
+// Core Render Function
+function renderApp() {
     const container = document.getElementById('choices-container');
     container.innerHTML = '';
 
@@ -29,110 +29,137 @@ function renderChoices() {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'choice-group';
 
-        // Header/Title
-        const titleBar = document.createElement('div');
-        titleBar.className = 'choice-title-bar';
-        titleBar.innerHTML = `
-            <input type="text" class="edit-title" value="${group.title}" 
-                   onchange="updateGroupTitle(${groupIndex}, this.value)">
-            <button class="btn-delete" onclick="deleteGroup(${groupIndex})" title="Hapus Grup">×</button>
+        // Group Header
+        let htmlContent = `
+            <div class="group-header">
+                <input type="text" class="input-title" value="${group.title}" 
+                       onchange="updateDataTitle(${groupIndex}, this.value)" placeholder="Nama Grup (ex: Choice 1)">
+                <button class="btn-icon" onclick="deleteGroup(${groupIndex})" title="Hapus Grup">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+            <div class="options-container">
         `;
-        groupDiv.appendChild(titleBar);
 
-        // List Pilihan
+        // Options List
         group.options.forEach((opt, optIndex) => {
-            const btn = document.createElement('button');
-            btn.className = 'choice-option';
-            btn.innerHTML = `<span>${opt.text}</span> <span class="scene-badge">${opt.scene}</span>`;
-            // Saat diklik, tambahkan ke rute
-            btn.onclick = () => recordStep(opt.text, opt.scene);
-            groupDiv.appendChild(btn);
+            htmlContent += `
+                <div class="option-item">
+                    <input type="text" class="input-opt-text" value="${opt.text}" 
+                           onchange="updateDataOptText(${groupIndex}, ${optIndex}, this.value)" placeholder="Teks Pilihan">
+                    <input type="text" class="input-opt-scene" value="${opt.scene}" 
+                           onchange="updateDataOptScene(${groupIndex}, ${optIndex}, this.value)" placeholder="Scene Tujuan">
+                    
+                    <button class="btn-record" onclick="recordStep(${groupIndex}, ${optIndex})" title="Catat rute ini">
+                        <i class="fa-solid fa-play"></i> Rekam
+                    </button>
+                    <button class="btn-icon" onclick="deleteOption(${groupIndex}, ${optIndex})" title="Hapus Pilihan">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
         });
 
-        // Form Tambah Pilihan Baru
-        const addForm = document.createElement('div');
-        addForm.className = 'add-option-form';
-        addForm.innerHTML = `
-            <input type="text" id="opt-text-${groupIndex}" placeholder="Teks (ex: 1 Lari)">
-            <input type="text" id="opt-scene-${groupIndex}" placeholder="Scene (ex: Bad End)">
-            <button onclick="addOption(${groupIndex})">Tambah</button>
+        // Add Option Button
+        htmlContent += `
+            </div>
+            <div class="add-option-row">
+                <button class="btn-add-opt" onclick="addOption(${groupIndex})">
+                    <i class="fa-solid fa-plus"></i> Tambah Pilihan Baru
+                </button>
+            </div>
         `;
-        groupDiv.appendChild(addForm);
-
+        
+        groupDiv.innerHTML = htmlContent;
         container.appendChild(groupDiv);
     });
 }
 
-// Logika untuk mengatur rute
-function recordStep(optionText, sceneText) {
-    // Ambil kata pertama (biasanya angka) dari teks pilihan
-    const identifier = optionText.split(' ')[0]; 
-    const step = `${identifier}->${sceneText}`;
+// --- DATA UPDATERS (No Re-render needed to avoid losing focus) ---
+window.updateDataTitle = function(gIndex, val) { vnData[gIndex].title = val; }
+window.updateDataOptText = function(gIndex, oIndex, val) { vnData[gIndex].options[oIndex].text = val; }
+window.updateDataOptScene = function(gIndex, oIndex, val) { vnData[gIndex].options[oIndex].scene = val; }
+
+
+// --- DATA MODIFIERS (Requires Re-render) ---
+window.addChoiceGroup = function() {
+    vnData.push({ title: `Choice ${vnData.length + 1}`, options: [] });
+    renderApp();
+    scrollToBottom('choices-container');
+}
+
+window.deleteGroup = function(index) {
+    if(confirm("Hapus seluruh grup pilihan ini?")) {
+        vnData.splice(index, 1);
+        renderApp();
+    }
+}
+
+window.addOption = function(groupIndex) {
+    vnData[groupIndex].options.push({ text: "", scene: "" });
+    renderApp();
+}
+
+window.deleteOption = function(groupIndex, optIndex) {
+    vnData[groupIndex].options.splice(optIndex, 1);
+    renderApp();
+}
+
+
+// --- ROUTE TRACKING LOGIC ---
+window.recordStep = function(groupIndex, optIndex) {
+    const opt = vnData[groupIndex].options[optIndex];
     
-    currentRoute.push(step);
+    // Extract choice number/identifier (e.g., "1" from "1 Ask her")
+    let identifier = opt.text.trim().split(' ')[0] || "[X]";
+    let scene = opt.scene.trim() || "[Unknown Scene]";
+    
+    // Format: "1->Dinner Scene"
+    const stepString = `${identifier}->${scene}`;
+    currentRoute.push(stepString);
+    
     updateRouteDisplay();
 }
 
 function updateRouteDisplay() {
-    const activeRouteEl = document.getElementById('current-route-text');
-    activeRouteEl.innerText = currentRoute.join('->');
+    const currentRouteEl = document.getElementById('current-route');
+    if (currentRoute.length === 0) {
+        currentRouteEl.innerHTML = '<span class="typing-text">Silakan klik tombol "Rekam" pada pilihan...</span>';
+    } else {
+        // Gabungkan dengan panah (->) layaknya gambar referensi
+        currentRouteEl.innerText = currentRoute.join('->');
+    }
 }
 
-function saveRouteLine() {
+window.saveRouteLine = function() {
     if (currentRoute.length === 0) return;
     
     savedRoutes.push(currentRoute.join('->'));
-    currentRoute = []; // Reset rute aktif
+    currentRoute = []; // Reset current route
     
-    const logEl = document.getElementById('route-log');
-    logEl.innerHTML = savedRoutes.map(route => `<p>${route}</p>`).join('');
+    const historyEl = document.getElementById('route-history');
+    historyEl.innerHTML = savedRoutes.map(route => `<p>${route}</p>`).join('');
+    
     updateRouteDisplay();
+    
+    // Flash effect on dialogue box
+    const box = document.querySelector('.vn-dialogue-box');
+    box.style.borderColor = 'var(--vn-primary)';
+    setTimeout(() => { box.style.borderColor = 'rgba(255, 255, 255, 0.8)'; }, 300);
 }
 
-function clearCurrentRoute() {
+window.clearCurrentRoute = function() {
     currentRoute = [];
     updateRouteDisplay();
 }
 
-// Logika Edit Data (Builder)
-function addChoiceGroup() {
-    vnData.push({
-        title: `Choice ${vnData.length + 1}`,
-        options: []
-    });
-    renderChoices();
+// Utilities
+function scrollToBottom(id) {
+    const el = document.getElementById(id);
+    setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
 }
 
-function deleteGroup(index) {
-    if(confirm("Yakin ingin menghapus Choice Group ini?")) {
-        vnData.splice(index, 1);
-        renderChoices();
-    }
-}
-
-function updateGroupTitle(index, newTitle) {
-    vnData[index].title = newTitle;
-}
-
-function addOption(groupIndex) {
-    const textInput = document.getElementById(`opt-text-${groupIndex}`);
-    const sceneInput = document.getElementById(`opt-scene-${groupIndex}`);
-    
-    if (textInput.value.trim() === '') {
-        alert("Teks pilihan tidak boleh kosong!");
-        return;
-    }
-
-    const sceneValue = sceneInput.value.trim() || 'Unknown Scene';
-
-    vnData[groupIndex].options.push({
-        text: textInput.value,
-        scene: sceneValue
-    });
-    renderChoices();
-}
-
-// Inisialisasi saat web pertama dimuat
+// Initial render
 document.addEventListener('DOMContentLoaded', () => {
-    renderChoices();
+    renderApp();
 });
