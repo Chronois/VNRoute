@@ -181,7 +181,21 @@
 </main>
 
 <div id="toast" class="toast" hidden></div>
-
+  
+<!-- ============ CUSTOM MODAL ============ -->
+  <div id="customModalOverlay" class="custom-modal-overlay" hidden>
+    <div class="custom-modal-box">
+      <div class="custom-modal-header" id="customModalTitle">Pesan</div>
+      <div class="custom-modal-body">
+        <p id="customModalMessage"></p>
+        <input type="text" id="customModalInput" hidden autocomplete="off" spellcheck="false">
+      </div>
+      <div class="custom-modal-footer">
+        <button id="customModalCancel" class="btn-ghost" hidden>Batal</button>
+        <button id="customModalConfirm" class="btn-add">Oke</button>
+      </div>
+    </div>
+  </div>
 <script src="script.js"></script>
 </body>
 </html>
