@@ -1,85 +1,77 @@
 /* =====================================================
    VNRoute — Visual Novel Route Tracker
-   Vanilla JS. Data lives in localStorage, with data.json
-   shipped as the default / re-import seed.
+   Multi-VN Architecture with localStorage
 ===================================================== */
 
-const STORAGE_KEY = 'vnroute.v2';
+const LIB_KEY = 'vnroute_library';
+const ACTIVE_KEY = 'vnroute_active_id';
 
-const FALLBACK_DATA = {
-  gameTitle: 'Untitled Visual Novel',
-  choicePoints: [
-    { id: 'cp1', label: 'Choice 1', options: [
-      { id: 'cp1o1', text: 'Join the Oda Bakufu.' },
-      { id: 'cp1o2', text: 'Join the Shinsengumi.' }
-    ]},
-    { id: 'cp2', label: 'Choice 2', options: [
-      { id: 'cp2o1', text: 'Stand for her' },
-      { id: 'cp2o2', text: 'Call the Police' },
-      { id: 'cp2o3', text: 'Search other route' }
-    ]}
-  ],
-  scenes: [
-    { id: 's1', name: 'Dinner Scene', note: 'A quiet dinner before things go wrong.' },
-    { id: 's2', name: 'Bruised Scene', note: 'The confrontation turns physical.' },
-    { id: 's3', name: 'Escape Scene', note: 'A narrow way out, taken in time.' }
-  ],
-  routes: [
-    {
-      id: 'r1', name: 'Dinner Route',
-      steps: [
-        { choicePointId: 'cp1', optionId: 'cp1o1', sceneId: 's1' },
-        { choicePointId: 'cp2', optionId: 'cp2o2', sceneId: 's2' }
-      ],
-      ending: { sceneId: 's2', type: 'bad' }
-    },
-    {
-      id: 'r2', name: 'Straight Home Route',
-      steps: [
-        { choicePointId: 'cp1', optionId: 'cp1o2', sceneId: '' },
-        { choicePointId: 'cp2', optionId: 'cp2o2', sceneId: 's3' }
-      ],
-      ending: { sceneId: 's3', type: 'normal' }
-    }
-  ]
+let vnLibrary = [];
+let activeVnId = null;
+
+let state = {
+  choicePoints: [],
+  scenes: [],
+  routes: []
 };
-
-let state = null;
 
 let editingCpId = null;
 let cpOptionsDraft = [];
-
 let editingSceneId = null;
-
 let editingRouteId = null;
 let routeStepsDraft = [];
-
 let sceneSort = { key: 'name', dir: 'asc' };
 
 /* ---------------- persistence ---------------- */
 
 async function loadState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    try { return normalizeState(JSON.parse(saved)); } catch (e) { /* fall through */ }
+  // 1. Load library
+  const libRaw = localStorage.getItem(LIB_KEY);
+  if (libRaw) {
+    try { vnLibrary = JSON.parse(libRaw); } catch(e){}
   }
-  try {
-    const res = await fetch('data.json', { cache: 'no-store' });
-    if (res.ok) return normalizeState(await res.json());
-  } catch (e) { /* file:// or no data.json */ }
-  return normalizeState(structuredClone(FALLBACK_DATA));
+  
+  // 2. Init if empty
+  if (!vnLibrary || vnLibrary.length === 0) {
+    const newId = uid('vn');
+    vnLibrary = [{ id: newId, title: 'New Visual Novel' }];
+    activeVnId = newId;
+    saveLibrary();
+    localStorage.setItem(ACTIVE_KEY, activeVnId);
+  } else {
+    activeVnId = localStorage.getItem(ACTIVE_KEY);
+    if (!activeVnId || !vnLibrary.find(v => v.id === activeVnId)) {
+      activeVnId = vnLibrary[0].id;
+      localStorage.setItem(ACTIVE_KEY, activeVnId);
+    }
+  }
+  
+  renderVnSelector();
+  
+  // 3. Load specific VN data
+  const dataRaw = localStorage.getItem('vnroute_data_' + activeVnId);
+  if (dataRaw) {
+    try { state = normalizeState(JSON.parse(dataRaw)); return; } catch(e){}
+  }
+  
+  // If no data found for this VN, start empty
+  state = normalizeState({}); 
 }
 
 function normalizeState(raw) {
   return {
-    gameTitle: typeof raw.gameTitle === 'string' ? raw.gameTitle : 'Untitled Visual Novel',
     choicePoints: Array.isArray(raw.choicePoints) ? raw.choicePoints : [],
     scenes: Array.isArray(raw.scenes) ? raw.scenes : [],
     routes: Array.isArray(raw.routes) ? raw.routes : []
   };
 }
 
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveState() { 
+  localStorage.setItem('vnroute_data_' + activeVnId, JSON.stringify(state)); 
+}
+function saveLibrary() {
+  localStorage.setItem(LIB_KEY, JSON.stringify(vnLibrary));
+}
 
 function uid(prefix) { return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
@@ -112,6 +104,11 @@ function renderUtilBar() {
     `${state.choicePoints.length} choice${state.choicePoints.length === 1 ? '' : 's'} · ${state.scenes.length} scene${state.scenes.length === 1 ? '' : 's'} · ${state.routes.length} route${state.routes.length === 1 ? '' : 's'}`;
 }
 
+function updateDocTitle() {
+  const currentVn = vnLibrary.find(v => v.id === activeVnId);
+  document.title = 'VNRoute · ' + (currentVn ? currentVn.title : 'Tracker');
+}
+
 /* ---------------- lookups ---------------- */
 
 function findCp(id) { return state.choicePoints.find(c => c.id === id); }
@@ -126,6 +123,68 @@ function countRoutesUsingScene(sceneId) {
     r.ending.sceneId === sceneId || r.steps.some(s => s.sceneId === sceneId)
   ).length;
 }
+
+/* ======================================================
+   VN SELECTOR LOGIC
+====================================================== */
+
+function renderVnSelector() {
+  const sel = document.getElementById('vnSelector');
+  sel.innerHTML = vnLibrary.map(v => `<option value="${escapeAttr(v.id)}" ${v.id === activeVnId ? 'selected' : ''}>${escapeHtml(v.title)}</option>`).join('');
+}
+
+document.getElementById('vnSelector').addEventListener('change', (e) => {
+  activeVnId = e.target.value;
+  localStorage.setItem(ACTIVE_KEY, activeVnId);
+  loadState().then(() => renderAll());
+});
+
+document.getElementById('btnNewVn').addEventListener('click', () => {
+  const title = prompt('Enter name for the new Visual Novel:', 'New Visual Novel');
+  if (!title) return;
+  const newId = uid('vn');
+  vnLibrary.push({ id: newId, title: title });
+  activeVnId = newId;
+  saveLibrary();
+  localStorage.setItem(ACTIVE_KEY, activeVnId);
+  
+  state = normalizeState({});
+  saveState();
+  renderVnSelector();
+  renderAll();
+  showToast('New Visual Novel added.');
+});
+
+document.getElementById('btnRenameVn').addEventListener('click', () => {
+  const vn = vnLibrary.find(v => v.id === activeVnId);
+  const title = prompt('Rename Visual Novel:', vn.title);
+  if (!title || title === vn.title) return;
+  vn.title = title;
+  saveLibrary();
+  renderVnSelector();
+  updateDocTitle();
+  showToast('Visual Novel renamed.');
+});
+
+document.getElementById('btnDeleteVn').addEventListener('click', () => {
+  if (vnLibrary.length <= 1) {
+    alert('You must have at least one Visual Novel. Cannot delete the only one.');
+    return;
+  }
+  if (!confirm('Are you sure you want to delete this Visual Novel and all its data? This cannot be undone.')) return;
+  
+  vnLibrary = vnLibrary.filter(v => v.id !== activeVnId);
+  localStorage.removeItem('vnroute_data_' + activeVnId);
+  
+  activeVnId = vnLibrary[0].id;
+  saveLibrary();
+  localStorage.setItem(ACTIVE_KEY, activeVnId);
+  
+  loadState().then(() => {
+    renderAll();
+    showToast('Visual Novel deleted.');
+  });
+});
 
 /* ======================================================
    CHOICES
@@ -158,7 +217,6 @@ function renderChoicePoints() {
         <div class="cp-eyebrow">Choice ${String(idx + 1).padStart(2, '0')}</div>
         <div class="cp-label">${escapeHtml(cp.label)}</div>
         
-        <!-- Implementasi tombol pilihan ala FGO -->
         <div class="fgo-options-container">
           ${cp.options.map(o => `
             <div class="fgo-button-wrap">
@@ -191,7 +249,7 @@ function renderCpOptionsEditor() {
   wrap.innerHTML = cpOptionsDraft.map((o, i) => `
     <div class="option-row" data-idx="${i}">
       <input type="text" value="${escapeAttr(o.text)}" placeholder="Option text" data-role="opt-text">
-      <button type="button" class="row-remove" data-role="opt-remove" aria-label="Remove option">&times;</button>
+      <button type="button" class="row-remove" data-role="opt-remove" aria-label="Remove option">&#10005;</button>
     </div>
   `).join('');
   wrap.querySelectorAll('[data-role="opt-text"]').forEach((input, i) => {
@@ -484,7 +542,7 @@ function renderRouteStepsEditor() {
         <select data-role="step-cp">${cpOptionsHtml}</select>
         <select data-role="step-opt">${optOptionsHtml}</select>
         <select data-role="step-scene">${sceneSelectOptions(step.sceneId, true)}</select>
-        <button type="button" class="row-remove" data-role="step-remove" aria-label="Remove step">&times;</button>
+        <button type="button" class="row-remove" data-role="step-remove" aria-label="Remove step">&#10005;</button>
       </div>
     `;
   }).join('');
@@ -522,7 +580,6 @@ function refreshRouteEndingSceneSelect(selectedId) {
 }
 
 function refreshRouteFormChoicePointRefs() {
-  // called after choice points change, so the steps editor reflects current choice points
   if (!document.getElementById('page-routes')) return;
   renderRouteStepsEditor();
 }
@@ -609,14 +666,15 @@ function exportData() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const slug = (state.gameTitle || 'vnroute').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'vnroute';
+  const currentVn = vnLibrary.find(v => v.id === activeVnId);
+  const slug = (currentVn ? currentVn.title : 'vnroute').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'vnroute';
   a.href = url;
   a.download = `${slug}-data.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  showToast('Saved. Commit this file as data.json to make it the site default.');
+  showToast('Saved current VN data.');
 }
 
 function importData(file) {
@@ -628,7 +686,7 @@ function importData(file) {
       state = normalizeState(parsed);
       saveState();
       renderAll();
-      showToast('Imported successfully.');
+      showToast('Data imported to current VN successfully.');
     } catch (e) {
       showToast('That file doesn\u2019t look like a VNRoute backup.');
     }
@@ -637,11 +695,11 @@ function importData(file) {
 }
 
 function clearData() {
-  if (!confirm('Clear all data on this device? This cannot be undone unless you have a backup file.')) return;
-  state = structuredClone(FALLBACK_DATA);
+  if (!confirm('Clear all data for this Visual Novel? This cannot be undone.')) return;
+  state = normalizeState({});
   saveState();
   renderAll();
-  showToast('Data cleared.');
+  showToast('Current VN Data cleared.');
 }
 
 /* ---------------- misc ---------------- */
@@ -652,8 +710,7 @@ function escapeHtml(str) {
 function escapeAttr(str) { return escapeHtml(str); }
 
 function renderAll() {
-  document.getElementById('gameTitleInput').value = state.gameTitle || 'Untitled Visual Novel';
-  document.title = 'VNRoute \u00b7 ' + (state.gameTitle || 'Untitled Visual Novel');
+  updateDocTitle();
   renderUtilBar();
   resetCpForm();
   resetSceneForm();
@@ -666,12 +723,6 @@ function renderAll() {
 /* ---------------- wire up ---------------- */
 
 function initEvents() {
-  document.getElementById('gameTitleInput').addEventListener('input', e => {
-    state.gameTitle = e.target.value;
-    document.title = 'VNRoute \u00b7 ' + (state.gameTitle || 'Untitled Visual Novel');
-    saveState();
-  });
-
   document.getElementById('form-choice').addEventListener('submit', submitCpForm);
   document.getElementById('cpAddOptionBtn').addEventListener('click', () => { cpOptionsDraft.push({ id: uid('opt'), text: '' }); renderCpOptionsEditor(); });
   document.getElementById('cpCancelEditBtn').addEventListener('click', resetCpForm);
@@ -697,7 +748,7 @@ function initEvents() {
 }
 
 (async function init() {
-  state = await loadState();
+  await loadState();
   initNav();
   initEvents();
   renderAll();

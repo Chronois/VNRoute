@@ -5,7 +5,6 @@
   --ink: #040914; /* Deepest space blue */
   --ink-2: #09152b;
   
-  /* FGO Solid Blue Gradients */
   --surface: linear-gradient(180deg, #152b54 0%, #0a1630 100%);
   --surface-2: rgba(14, 30, 61, 0.8);
   
@@ -123,7 +122,7 @@ html, body {
 .util-save { color: var(--text-faint); }
 
 /* ---------------------------------------------------
-   Hero
+   Hero & VN Selector
 --------------------------------------------------- */
 .hero {
   position: relative;
@@ -158,34 +157,52 @@ html, body {
   max-width: 500px;
   margin: 0 auto;
 }
+
+/* New VN Selector Styles */
 .hero-tracking {
   margin-top: 30px;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
 }
-.hero-tracking input {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--border-strong);
+.vn-selector-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.vn-selector-group select {
+  background: rgba(14, 30, 61, 0.7);
+  border: 1px solid var(--border-strong);
   color: #fff;
   font-family: var(--font-display);
   font-style: italic;
   font-size: 20px;
+  padding: 4px 12px 6px;
+  outline: none;
+  min-width: 220px;
+  max-width: 350px;
+  cursor: pointer;
   text-transform: none;
   letter-spacing: normal;
-  padding: 2px 8px 4px;
-  outline: none;
-  text-align: center;
-  min-width: 200px;
-  transition: border-color 0.2s var(--ease);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
 }
-.hero-tracking input:focus { border-color: var(--primary-accent); }
+.vn-selector-group select option {
+  background: var(--ink-2);
+  color: #fff;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 15px;
+}
+.vn-selector-group .btn-icon {
+  width: 34px; height: 34px;
+  background: rgba(14, 30, 61, 0.7);
+}
 
 /* ---------------------------------------------------
    Pages / sections
@@ -224,11 +241,9 @@ main { position: relative; z-index: 1; }
   border: 1px solid var(--border);
   padding: 24px;
   margin-bottom: 24px;
-  /* FGO Angle Cut */
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
   position: relative;
 }
-/* Adding top-border highlight for panels */
 .manage-form::before, .manage-table-wrap::before, .data-card::before {
   content: '';
   position: absolute;
@@ -264,7 +279,6 @@ main { position: relative; z-index: 1; }
   font-family: var(--font-body);
   font-size: 14px;
   outline: none;
-  /* FGO Mini Chamfer */
   clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
   transition: all 0.2s var(--ease);
 }
@@ -275,7 +289,6 @@ main { position: relative; z-index: 1; }
 
 .form-actions { display: flex; gap: 12px; align-items: center; margin-left: auto; }
 
-/* FGO Styled Action Buttons */
 .btn-add, .btn-ghost, .btn-danger-outline {
   font-family: var(--font-body);
   font-weight: 700;
@@ -286,7 +299,6 @@ main { position: relative; z-index: 1; }
   white-space: nowrap;
   outline: none;
   transition: all 0.2s var(--ease);
-  /* FGO Angle Cut */
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
 }
 
@@ -339,7 +351,6 @@ main { position: relative; z-index: 1; }
 }
 .btn-add-row:hover { border-color: var(--primary-accent); color: var(--primary-accent); background: rgba(110, 198, 255, 0.05); }
 
-/* Dynamic sub-rows */
 .options-editor, .steps-editor { display: flex; flex-direction: column; gap: 10px; }
 
 .option-row, .step-row {
@@ -433,7 +444,6 @@ main { position: relative; z-index: 1; }
 }
 .cp-label { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin: 6px 0 16px; color: #fff; }
 
-/* === EXACT FGO CHOICE BUTTONS === */
 .fgo-options-container {
   display: flex;
   flex-direction: column;
@@ -443,10 +453,8 @@ main { position: relative; z-index: 1; }
 }
 .fgo-button-wrap {
   position: relative;
-  /* Outer glow / border color */
   background: linear-gradient(180deg, #74c7ff 0%, #2f7acc 40%, #11427d 100%);
   padding: 2px;
-  /* Exactly as requested: 15px chamfer top-left and bottom-right */
   clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
   transition: transform 0.2s var(--ease), filter 0.2s var(--ease);
   cursor: pointer;
@@ -456,7 +464,6 @@ main { position: relative; z-index: 1; }
   filter: brightness(1.2);
 }
 .fgo-button-inner {
-  /* Solid FGO Blue Gradient */
   background: linear-gradient(180deg, #224a87 0%, #153163 50%, #0d1e40 100%);
   clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
   padding: 16px 20px;
@@ -501,7 +508,7 @@ main { position: relative; z-index: 1; }
    Table (Scenes)
 --------------------------------------------------- */
 .manage-table-wrap {
-  padding: 0; /* Remove padding for seamless table */
+  padding: 0;
   overflow-x: auto;
 }
 .manage-table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -522,8 +529,8 @@ main { position: relative; z-index: 1; }
 .manage-table thead th:hover { color: var(--primary-accent); }
 .manage-table thead th.col-num, .manage-table thead th.col-actions { text-align: center; cursor: default; }
 .manage-table thead th::after { content: ''; display: inline-block; margin-left: 6px; font-size: 10px; opacity: 0.5; }
-.manage-table thead th.asc::after { content: '\25B2'; opacity: 1; color: var(--primary-accent); }
-.manage-table thead th.desc::after { content: '\25BC'; opacity: 1; color: var(--primary-accent); }
+.manage-table thead th.asc::after { content: 'B2'; opacity: 1; color: var(--primary-accent); }
+.manage-table thead th.desc::after { content: 'BC'; opacity: 1; color: var(--primary-accent); }
 
 .manage-table tbody td {
   padding: 14px 16px;
@@ -542,7 +549,7 @@ main { position: relative; z-index: 1; }
 .scene-note-cell { color: var(--text-dim); }
 
 /* ---------------------------------------------------
-   Route cards
+   Route cards & CENTERED THREAD ALIGNMENT
 --------------------------------------------------- */
 .routes-list { display: flex; flex-direction: column; gap: 16px; }
 
@@ -572,33 +579,50 @@ main { position: relative; z-index: 1; }
 }
 .route-name { font-family: var(--font-display); font-size: 24px; font-weight: 600; color: #fff; }
 
-.thread { position: relative; padding-left: 26px; margin-bottom: 16px; }
+/* Perfected Math for Centered Thread Line & Dots */
+.thread { 
+  position: relative; 
+  padding-left: 28px; /* Left edge of node content is at 28px */
+  margin-bottom: 16px; 
+}
 .thread::before {
   content: "";
   position: absolute;
-  left: 6px;
+  left: 10px; /* Line starts at 10px, width 2px -> Line Center is at 11px */
   top: 8px;
   bottom: 8px;
   width: 2px;
   background: linear-gradient(180deg, var(--primary-accent) 0%, #1a82d6 100%);
   opacity: 0.6;
 }
-.thread-node { position: relative; padding: 6px 0 6px 16px; font-size: 14px; }
+.thread-node { 
+  position: relative; 
+  padding: 6px 0 6px 12px; 
+  font-size: 14px; 
+  display: flex;
+  align-items: center; /* Vertically aligns text with dot */
+  min-height: 32px;
+}
 .thread-node .node-dot {
   position: absolute;
-  left: -25px;
-  top: 12px;
-  width: 10px;
-  height: 10px;
+  /* Left edge of node content is 28px. 
+     Left offset = -23px.
+     Absolute left = 28 - 23 = 5px.
+     Dot width = 12px. Center = 5px + 6px = 11px.
+     Matches line center perfectly! */
+  left: -23px; 
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
   background: var(--ink);
   border: 2px solid var(--primary-accent);
   border-radius: 50%;
 }
 .thread-node.is-scene .node-dot { 
   border-radius: 2px; 
-  transform: rotate(45deg); 
+  transform: translateY(-50%) rotate(45deg); 
   border-color: #fce69a; 
-  left: -25px; 
 }
 
 .node-choice-label {
@@ -688,4 +712,5 @@ main { position: relative; z-index: 1; }
   .form-actions { margin-left: 0; width: 100%; justify-content: space-between; }
   .route-card-head { flex-direction: column; gap: 6px; }
   .util-bar { font-size: 10px; padding: 8px 16px; }
+  .vn-selector-group { flex-wrap: wrap; justify-content: center; }
 }
