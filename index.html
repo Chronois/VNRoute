@@ -3,42 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VN Route Tracker</title>
+    <title>VNRoute</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="vn-container">
         <header>
-            <h1>Route Log System</h1>
+            <h1>VNRoute</h1>
+            <p class="subtitle">Visual Novel Route Tracker</p>
         </header>
 
         <main>
-            <!-- Section Pilihan -->
-            <section class="choices-container">
-                <!-- Choice 1 -->
-                <div class="choice-group">
-                    <div class="choice-title">Choice 1</div>
-                    <button class="choice-option">1 Ask her for dinner</button>
-                    <button class="choice-option">2 Go straight to home</button>
-                </div>
-
-                <!-- Choice 2 -->
-                <div class="choice-group">
-                    <div class="choice-title">Choice 2</div>
-                    <button class="choice-option">1 Stand for her</button>
-                    <button class="choice-option">2 Call the Police</button>
-                    <button class="choice-option">3 Search other route</button>
-                </div>
+            <!-- Kontainer Pilihan Dinamis -->
+            <section id="choices-container" class="choices-container">
+                <!-- Pilihan akan di-render oleh JavaScript di sini -->
             </section>
+
+            <button class="btn-add-main" onclick="addChoiceGroup()">+ Tambah Choice Group Baru</button>
 
             <!-- Section Hasil / Result -->
             <section class="result-container">
-                <div class="result-title">Result</div>
-                <div class="dialogue-box">
-                    <div class="dialogue-text">
-                        <p>1 -> Dinner Scene -> 2 -> Bruised Scene</p>
-                        <p>2 -> 2 -> Escape Scene</p>
+                <div class="result-header">
+                    <span class="result-title">Result Log</span>
+                    <div class="route-controls">
+                        <button onclick="saveRouteLine()" class="btn-control">Simpan Baris</button>
+                        <button onclick="clearCurrentRoute()" class="btn-control btn-danger">Hapus Aktif</button>
                     </div>
+                </div>
+                
+                <div class="dialogue-box">
+                    <div class="dialogue-text" id="route-log">
+                        <!-- History rute yang sudah disimpan akan muncul di sini -->
+                    </div>
+                    <!-- Rute yang sedang berjalan -->
+                    <div class="dialogue-text active-route" id="current-route-text"></div>
                     <div class="vn-cursor">▼</div>
                 </div>
             </section>
