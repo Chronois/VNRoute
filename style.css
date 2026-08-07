@@ -1,24 +1,24 @@
 /* ---------------------------------------------------
-   Tokens
+   Tokens - FGO Blue & Gold Theme
 --------------------------------------------------- */
 :root {
-  --ink: #120f1c;
-  --ink-2: #1a1628;
-  --surface: #1d1830;
-  --surface-2: #241d38;
-  --border: #372c4d;
-  --border-strong: #4a3c63;
+  --ink: #070d1a;
+  --ink-2: #0f192e;
+  --surface: #142240;
+  --surface-2: #1e325c;
+  --border: #2c4a85;
+  --border-strong: #416bc2;
 
-  --text: #efe9f5;
-  --text-dim: #a89cba;
-  --text-faint: #6c6484;
+  --text: #f0f6ff;
+  --text-dim: #a3c1ed;
+  --text-faint: #678bc4;
 
-  --rose: #e3a3a8;
-  --rose-soft: rgba(227, 163, 168, 0.14);
-  --gold: #d4af6a;
-  --gold-soft: #e6c98c;
-  --lilac: #b592d1;
-  --lilac-soft: rgba(181, 146, 209, 0.14);
+  --rose: #00d0ff; /* FGO Cyan Highlight */
+  --rose-soft: rgba(0, 208, 255, 0.14);
+  --gold: #d4af37; /* FGO Gold */
+  --gold-soft: #fce69a;
+  --lilac: #3b82f6; /* True Blue */
+  --lilac-soft: rgba(59, 130, 246, 0.14);
 
   --good: #8fbf8a;
   --bad: #d17a7a;
@@ -52,15 +52,16 @@ html, body {
 ::-webkit-scrollbar-track { background: var(--ink); }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 5px; }
 
+/* Adjusted Stars Background to match FGO Blue/Gold vibe */
 .stars {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 600px 400px at 10% -5%, var(--rose-soft), transparent 60%),
-    radial-gradient(ellipse 700px 500px at 105% 10%, rgba(212, 175, 106, 0.1), transparent 55%),
-    radial-gradient(ellipse 900px 600px at 50% 120%, var(--lilac-soft), transparent 60%);
+    radial-gradient(ellipse 600px 400px at 10% -5%, rgba(0, 208, 255, 0.12), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 105% 10%, rgba(212, 175, 55, 0.1), transparent 55%),
+    radial-gradient(ellipse 900px 600px at 50% 120%, rgba(59, 130, 246, 0.12), transparent 60%);
 }
 
 /* ---------------------------------------------------
@@ -72,7 +73,7 @@ html, body {
   z-index: 30;
   display: flex;
   overflow-x: auto;
-  background: rgba(18, 15, 28, 0.92);
+  background: rgba(7, 13, 26, 0.92);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
@@ -109,7 +110,7 @@ html, body {
   justify-content: space-between;
   gap: 10px;
   padding: 7px 20px;
-  background: rgba(29, 24, 48, 0.85);
+  background: rgba(20, 34, 64, 0.85);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
@@ -391,7 +392,7 @@ main { position: relative; z-index: 1; }
 --------------------------------------------------- */
 .choice-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* slightly wider for new buttons */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
 
@@ -413,7 +414,7 @@ main { position: relative; z-index: 1; }
 }
 .cp-label { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin: 4px 0 10px; }
 
-/* FGO Style Choice Buttons Implementation */
+/* FGO Style Choice Buttons Implementation - Solid Blue */
 .fgo-options-container {
   display: flex;
   flex-direction: column;
@@ -434,12 +435,7 @@ main { position: relative; z-index: 1; }
   filter: brightness(1.15);
 }
 .fgo-button-inner {
-  background-color: #050505;
-  background-image:
-    linear-gradient(45deg, #151515 25%, transparent 25%, transparent 75%, #151515 75%, #151515),
-    linear-gradient(45deg, #151515 25%, transparent 25%, transparent 75%, #151515 75%, #151515);
-  background-size: 20px 20px;
-  background-position: 0 0, 10px 10px;
+  background: linear-gradient(180deg, #143875 0%, #0a1c3a 100%); /* Solid FGO Blue Background */
   clip-path: polygon(13px 0, 100% 0, 100% calc(100% - 13px), calc(100% - 13px) 100%, 0 100%, 0 13px);
   padding: 14px 20px;
   text-align: center;
@@ -451,7 +447,7 @@ main { position: relative; z-index: 1; }
 .fgo-button-inner span {
   font-family: var(--font-display);
   font-size: 19px;
-  color: #fff;
+  color: #ffffff;
   text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
   line-height: 1.2;
 }
@@ -519,7 +515,7 @@ main { position: relative; z-index: 1; }
   vertical-align: middle;
 }
 .manage-table tbody td.col-num, .manage-table tbody td.col-actions { text-align: center; }
-.manage-table tbody tr:hover { background: rgba(227, 163, 168, 0.05); }
+.manage-table tbody tr:hover { background: rgba(59, 130, 246, 0.05); }
 
 .manage-table .empty-row td {
   color: var(--text-faint);
