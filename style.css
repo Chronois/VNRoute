@@ -529,8 +529,8 @@ main { position: relative; z-index: 1; }
 .manage-table thead th:hover { color: var(--primary-accent); }
 .manage-table thead th.col-num, .manage-table thead th.col-actions { text-align: center; cursor: default; }
 .manage-table thead th::after { content: ''; display: inline-block; margin-left: 6px; font-size: 10px; opacity: 0.5; }
-.manage-table thead th.asc::after { content: 'B2'; opacity: 1; color: var(--primary-accent); }
-.manage-table thead th.desc::after { content: 'BC'; opacity: 1; color: var(--primary-accent); }
+.manage-table thead th.asc::after { content: '▲'; opacity: 1; color: var(--primary-accent); }
+.manage-table thead th.desc::after { content: '▼'; opacity: 1; color: var(--primary-accent); }
 
 .manage-table tbody td {
   padding: 14px 16px;
