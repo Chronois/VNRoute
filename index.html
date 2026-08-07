@@ -3,196 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoBookmark</title>
+    <title>VN Route Tracker</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="vn-container">
+        <header>
+            <h1>Route Log System</h1>
+        </header>
 
-    <!-- Header Full Width with Export/Import Icons -->
-    <header class="navbar">
-        <div class="navbar-content">
-            <h1 class="app-title">AutoBookmark</h1>
-            <div class="header-actions">
-                <button id="exportBtn" class="btn-icon-only" title="Export Data">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                </button>
-                <label for="importFile" class="btn-icon-only cursor-pointer" title="Import Data">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                </label>
-                <input type="file" id="importFile" accept=".json" style="display: none;">
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="main-container">
-        <!-- Controls Area -->
-        <section class="controls-section">
-            <div class="control-grid">
-                <div class="search-wrapper">
-                    <input type="text" id="searchInput" class="input-field" placeholder="Search title, tag, or source...">
-                    <button id="clearSearchBtn" class="clear-btn" title="Clear search" style="display: none;">✕</button>
-                </div>
-                <button id="openManageTagsBtn" class="btn btn-secondary">Tags</button>
-                <button id="openFilterBtn" class="btn btn-success">Filter</button>
-            </div>
-            
-            <div class="control-grid">
-                <input type="url" id="urlInput" class="input-field" placeholder="Enter web link here..." required>
-                <button id="openSelectTagsBtn" class="btn btn-outline">Set Tag (0)</button>
-                <button id="submitBtn" class="btn btn-primary">Save</button>
-            </div>
-        </section>
-        
-        <div class="loading" id="loadingText">
-            <span class="spinner"></span> Processing link...
-        </div>
-
-        <!-- List Controls (Select All) -->
-        <div id="listControls" class="list-controls" style="display: none;">
-            <label class="select-all-label">
-                <input type="checkbox" id="selectAllCb" class="bm-checkbox"> Select All Visible
-            </label>
-            <span id="visibleCount" style="color: #8b949e; font-size: 13px;"></span>
-        </div>
-
-        <!-- Bookmark List -->
-        <section class="bookmark-list-container" id="bookmarkList">
-            <!-- Items will be generated here -->
-        </section>
-
-        <!-- Floating Bulk Action Bar -->
-        <div id="bulkActionBar" class="bulk-action-bar">
-            <span id="bulkCount" style="font-weight: 600; color: #f0f6fc;">0 selected</span>
-            <div style="display: flex; gap: 8px;">
-                <button id="bulkTagsBtn" class="btn btn-success">Add Tags</button>
-                <button id="bulkDeleteBtn" class="btn btn-outline" style="color: #f85149; border-color: rgba(248,81,73,0.3);">Delete</button>
-                <button id="bulkCancelBtn" class="btn btn-ghost">Cancel</button>
-            </div>
-        </div>
-    </main>
-
-    <!-- ================= MODALS ================= -->
-    
-    <!-- Filter Modal -->
-    <div id="filterModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Filter Bookmarks</h3>
-            </div>
-            <div class="modal-body">
-                <div class="filter-group">
-                    <label>Sort By</label>
-                    <select id="filterOrder" class="input-field">
-                        <option value="newest">Newest Added</option>
-                        <option value="oldest">Oldest Added</option>
-                        <option value="az">Alphabetical (A-Z)</option>
-                        <option value="za">Alphabetical (Z-A)</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Source</label>
-                    <select id="filterSource" class="input-field"><option value="all">All Sources</option></select>
-                </div>
-                <div class="filter-tags-group">
-                    <label>Custom Tags</label>
-                    <div id="filterTagsList" class="checkbox-list"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="resetFilterBtn" class="btn btn-ghost">Reset</button>
-                <button id="applyFilterBtn" class="btn btn-primary">Apply Filter</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Manage Tags Modal -->
-    <div id="manageTagsModal" class="modal">
-        <div class="modal-content manage-tags-content">
-            <div class="modal-header">
-                <h3>Manage Tags</h3>
-                <button class="btn-close" id="closeManageTagsBtn">✕</button>
-            </div>
-            <div class="tags-list-container" id="globalTagsList"></div>
-            <button id="addNewTagBtn" class="btn btn-outline" style="margin-top: 15px; width: 100%;">+ Add New Tag</button>
-        </div>
-    </div>
-
-    <!-- Edit Bookmark Modal -->
-    <div id="editBookmarkModal" class="modal">
-        <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header">
-                <h3 id="editModalTitle">Edit Bookmark</h3>
-            </div>
-            <div class="modal-body">
-                <div id="editTitleGroup" class="filter-group">
-                    <label>Title (Not clickable)</label>
-                    <input type="text" id="editBmTitle" class="input-field" placeholder="Enter title...">
+        <main>
+            <!-- Section Pilihan -->
+            <section class="choices-container">
+                <!-- Choice 1 -->
+                <div class="choice-group">
+                    <div class="choice-title">Choice 1</div>
+                    <button class="choice-option">1 Ask her for dinner</button>
+                    <button class="choice-option">2 Go straight to home</button>
                 </div>
 
-                <div id="editUrlGroup" class="filter-group">
-                    <label>Links (URLs)</label>
-                    <div id="editUrlList" style="display: flex; flex-direction: column; gap: 8px;">
-                        <!-- URLs generated here -->
+                <!-- Choice 2 -->
+                <div class="choice-group">
+                    <div class="choice-title">Choice 2</div>
+                    <button class="choice-option">1 Stand for her</button>
+                    <button class="choice-option">2 Call the Police</button>
+                    <button class="choice-option">3 Search other route</button>
+                </div>
+            </section>
+
+            <!-- Section Hasil / Result -->
+            <section class="result-container">
+                <div class="result-title">Result</div>
+                <div class="dialogue-box">
+                    <div class="dialogue-text">
+                        <p>1 -> Dinner Scene -> 2 -> Bruised Scene</p>
+                        <p>2 -> 2 -> Escape Scene</p>
                     </div>
-                    <button id="addNewUrlBtn" class="btn btn-outline" style="margin-top: 10px; width: 100%; height: 34px;">+ Add Link</button>
+                    <div class="vn-cursor">▼</div>
                 </div>
-
-                <div class="filter-tags-group">
-                    <label>Select Tags</label>
-                    <div id="editBmTagsList" class="checkbox-list edit-tags-box"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="cancelEditBtn" class="btn btn-ghost" style="color: #ef4444;">Cancel</button>
-                <button id="saveEditBmBtn" class="btn btn-primary">Save</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bulk Add Tags Modal -->
-    <div id="bulkTagModal" class="modal">
-        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
-            <div class="modal-header">
-                <h3>Apply Tags to Selected</h3>
-            </div>
-            <div class="modal-body">
-                <p style="font-size: 13px; color: #8b949e; margin-bottom: 12px;">Selected tags will be added to the existing tags of the chosen bookmarks.</p>
-                <div class="filter-tags-group">
-                    <div id="bulkBmTagsList" class="checkbox-list edit-tags-box"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="cancelBulkTagBtn" class="btn btn-ghost">Cancel</button>
-                <button id="saveBulkTagBtn" class="btn btn-primary">Apply Tags</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- CUSTOM PROMPT MODAL -->
-    <div id="customPromptModal" class="modal" style="z-index: 999;">
-        <div class="modal-content custom-dialog">
-            <h3 class="dialog-title" id="promptTitleModal">Input Required</h3>
-            <p id="promptMessage" class="dialog-msg"></p>
-            <input type="text" id="promptInput" class="input-field" autocomplete="off">
-            <div class="modal-footer" style="margin-top: 15px;">
-                <button id="promptCancel" class="btn btn-ghost">Cancel</button>
-                <button id="promptOk" class="btn btn-primary">OK</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- CUSTOM CONFIRM MODAL -->
-    <div id="customConfirmModal" class="modal" style="z-index: 999;">
-        <div class="modal-content custom-dialog">
-            <h3 class="dialog-title">Notification</h3>
-            <p id="confirmMessage" class="dialog-msg"></p>
-            <div class="modal-footer" style="margin-top: 15px;">
-                <button id="confirmCancel" class="btn btn-ghost">Cancel</button>
-                <button id="confirmOk" class="btn btn-primary">Yes</button>
-            </div>
-        </div>
+            </section>
+        </main>
     </div>
 
     <script src="script.js"></script>
