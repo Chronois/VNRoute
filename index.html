@@ -1,200 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VNRoute</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VNRoute</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="stars" aria-hidden="true"></div>
+  <div class="stars" aria-hidden="true"></div>
 
-<nav class="main-nav" id="mainNav" aria-label="Sections">
-  <button class="nav-item is-active" data-page="routes">Route</button>
-  <button class="nav-item" data-page="scenes">Scenes</button>
-  <button class="nav-item" data-page="choices">Choices</button>
-  <button class="nav-item" data-page="data">Data</button>
-</nav>
+  <nav class="main-nav" id="mainNav" aria-label="Sections">
+    <button class="nav-item is-active" data-page="routes">Route</button>
+    <button class="nav-item" data-page="scenes">Scenes</button>
+    <button class="nav-item" data-page="choices">Choices</button>
+    <button class="nav-item" data-page="data">Data</button>
+  </nav>
 
-<div class="util-bar">
-  <span id="utilCounts">—</span>
-  <span class="util-save">Saved on this device</span>
-</div>
-
-<header class="hero">
-  <div class="hero-eyebrow">A QUIET LEDGER OF CHOICES</div>
-  <h1 class="hero-title">VNRoute</h1>
-  <p class="hero-sub">Map every branch, name every scene, and trace the thread each playthrough follows to its ending.</p>
-  
-  <div class="hero-tracking">
-    <span>Now tracking:</span>
-    <div class="vn-selector-group">
-      <select id="vnSelector" aria-label="Select Visual Novel"></select>
-      <button id="btnNewVn" class="btn-icon" title="Create New VN">&#10133;</button>
-      <button id="btnRenameVn" class="btn-icon edit" title="Rename Current VN">&#9998;</button>
-      <button id="btnDeleteVn" class="btn-icon del" title="Delete Current VN">&#10005;</button>
-    </div>
+  <div class="util-bar">
+    <span id="utilCounts">—</span>
+    <span class="util-save">Saved on this device</span>
   </div>
-</header>
 
-<main>
-
-  <!-- ============ ROUTES ============ -->
-  <section class="page is-active" id="page-routes">
-    <div class="section-head">
-      <span class="eyebrow">Playthrough Log</span>
-      <h2>Route</h2>
-      <p class="section-desc">Trace each playthrough: the choices you made, the scenes they opened, and where the thread ended.</p>
+  <header class="hero">
+    <div class="hero-eyebrow">A QUIET LEDGER OF CHOICES</div>
+    <h1 class="hero-title">VNRoute</h1>
+    <p class="hero-sub">Map every branch, name every scene, and trace the thread each playthrough follows to its ending.</p>
+    <div class="hero-tracking">
+      <span>Now tracking:</span>
+      <div class="vn-selector-group">
+        <select id="vnSelector" aria-label="Select Visual Novel"></select>
+        <button id="btnNewVn" class="btn-icon" title="Create New VN">&#10133;</button>
+        <button id="btnRenameVn" class="btn-icon edit" title="Rename Current VN">&#9998;</button>
+        <button id="btnDeleteVn" class="btn-icon del" title="Delete Current VN">&#10005;</button>
+      </div>
     </div>
+  </header>
 
-    <form class="manage-form" id="form-route">
-      <div class="field field-grow">
-        <label for="routeNameInput">Route name</label>
-        <input id="routeNameInput" type="text" placeholder="e.g. Dinner &rarr; Escape" maxlength="60">
+  <main>
+    <!-- ============ ROUTES ============ -->
+    <section class="page is-active" id="page-routes">
+      <div class="section-head">
+        <span class="eyebrow">Playthrough Log</span>
+        <h2>Route</h2>
+        <p class="section-desc">Trace each playthrough: the choices you made, the scenes they opened, and where the thread ended.</p>
       </div>
-      <div class="field field-full">
-        <label>Steps</label>
-        <div id="routeStepsEditor" class="steps-editor"></div>
-        <button type="button" id="routeAddStepBtn" class="btn-add-row">+ Add Step</button>
-      </div>
-      <div class="field">
-        <label for="routeEndingScene">Ending scene</label>
-        <select id="routeEndingScene"></select>
-      </div>
-      <div class="field">
-        <label for="routeEndingType">Ending type</label>
-        <select id="routeEndingType">
-          <option value="good">Good End</option>
-          <option value="normal" selected>Normal End</option>
-          <option value="bad">Bad End</option>
-          <option value="true">True End</option>
-          <option value="secret">Secret End</option>
-        </select>
-      </div>
-      <div class="form-actions">
-        <button type="button" id="routeCancelEditBtn" class="btn-cancel-edit" hidden>Cancel edit</button>
-        <button type="submit" class="btn-add" id="routeSubmitBtn">+ Record Route</button>
-      </div>
-    </form>
 
-    <div class="filter-header">
+      <form class="manage-form" id="form-route">
+        <div class="field field-grow">
+          <label for="routeNameInput">Route name</label>
+          <input id="routeNameInput" type="text" placeholder="e.g. Dinner &rarr; Escape" maxlength="60">
+        </div>
+        <div class="field field-full">
+          <label>Steps</label>
+          <div id="routeStepsEditor" class="steps-editor"></div>
+          <button type="button" id="routeAddStepBtn" class="btn-add-row">+ Add Step</button>
+        </div>
+        <div class="field">
+          <label for="routeEndingScene">Ending scene</label>
+          <select id="routeEndingScene"></select>
+        </div>
+        <div class="field">
+          <label for="routeEndingType">Ending type</label>
+          <select id="routeEndingType">
+            <option value="good">Good End</option>
+            <option value="normal" selected>Normal End</option>
+            <option value="bad">Bad End</option>
+            <option value="true">True End</option>
+            <option value="secret">Secret End</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="routeCancelEditBtn" class="btn-cancel-edit" hidden>Cancel edit</button>
+          <button type="submit" class="btn-add" id="routeSubmitBtn">+ Record Route</button>
+        </div>
+      </form>
+
+      <div class="filter-header">
+        <div class="filter-wrap">
+          <input type="text" id="routeFilter" class="table-filter" placeholder="Search by scene, choice or ending&hellip;">
+        </div>
+        <div class="view-controls">
+          <button type="button" id="btnRouteViewFull" class="btn-view is-active">Full</button>
+          <button type="button" id="btnRouteViewSimple" class="btn-view">Simplified</button>
+        </div>
+      </div>
+      <div id="routesList" class="routes-list"></div>
+    </section>
+
+    <!-- ============ SCENES ============ -->
+    <section class="page" id="page-scenes">
+      <div class="section-head">
+        <span class="eyebrow">Scene Library</span>
+        <h2>Scenes</h2>
+        <p class="section-desc">Every distinct scene your choices can lead to. Add them once, reuse them freely when building routes.</p>
+      </div>
+
+      <form class="manage-form" id="form-scene">
+        <div class="field">
+          <label for="sceneNameInput">Scene name</label>
+          <input id="sceneNameInput" type="text" placeholder="e.g. Fight Scene" maxlength="60">
+        </div>
+        <div class="field field-grow">
+          <label for="sceneNoteInput">Note</label>
+          <input id="sceneNoteInput" type="text" placeholder="What happens here? (optional)" maxlength="140">
+        </div>
+        <div class="form-actions">
+          <button type="button" id="sceneCancelEditBtn" class="btn-cancel-edit" hidden>Cancel edit</button>
+          <button type="submit" class="btn-add" id="sceneSubmitBtn">+ Add Scene</button>
+        </div>
+      </form>
+
       <div class="filter-wrap">
-        <input type="text" id="routeFilter" class="table-filter" placeholder="Search by scene, choice or ending&hellip;">
+        <input type="text" id="sceneFilter" class="table-filter" placeholder="Filter by name or note&hellip;">
       </div>
-      <div class="view-controls">
-        <button type="button" id="btnRouteViewFull" class="btn-view is-active">Full</button>
-        <button type="button" id="btnRouteViewSimple" class="btn-view">Simplified</button>
+
+      <div class="manage-table-wrap">
+        <table class="manage-table" id="sceneTable">
+          <thead>
+            <tr>
+              <th data-sort="name">Name</th>
+              <th data-sort="note">Note</th>
+              <th data-sort="used" class="col-num">Used In</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sceneTableBody"></tbody>
+        </table>
       </div>
-    </div>
+    </section>
 
-    <div id="routesList" class="routes-list"></div>
-  </section>
-
-  <!-- ============ SCENES ============ -->
-  <section class="page" id="page-scenes">
-    <div class="section-head">
-      <span class="eyebrow">Scene Library</span>
-      <h2>Scenes</h2>
-      <p class="section-desc">Every distinct scene your choices can lead to. Add them once, reuse them freely when building routes.</p>
-    </div>
-
-    <form class="manage-form" id="form-scene">
-      <div class="field">
-        <label for="sceneNameInput">Scene name</label>
-        <input id="sceneNameInput" type="text" placeholder="e.g. Fight Scene" maxlength="60">
+    <!-- ============ CHOICES ============ -->
+    <section class="page" id="page-choices">
+      <div class="section-head">
+        <span class="eyebrow">Story Structure</span>
+        <h2>Choice Map</h2>
+        <p class="section-desc">Every branching point in the story, laid out in the order you meet it.</p>
       </div>
-      <div class="field field-grow">
-        <label for="sceneNoteInput">Note</label>
-        <input id="sceneNoteInput" type="text" placeholder="What happens here? (optional)" maxlength="140">
+
+      <form class="manage-form" id="form-choice">
+        <div class="field field-grow">
+          <label for="cpLabelInput">Label</label>
+          <input id="cpLabelInput" type="text" placeholder="e.g. Choice 1 (Leave blank to auto-generate)" maxlength="40">
+        </div>
+        <div class="field field-full">
+          <label>Options</label>
+          <div id="cpOptionsEditor" class="options-editor"></div>
+          <button type="button" id="cpAddOptionBtn" class="btn-add-row">+ Add Option</button>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="cpCancelEditBtn" class="btn-cancel-edit" hidden>Cancel edit</button>
+          <button type="submit" class="btn-add" id="cpSubmitBtn">+ Add Choice</button>
+        </div>
+      </form>
+
+      <div class="filter-header">
+        <div class="filter-wrap">
+          <input type="text" id="choiceFilter" class="table-filter" placeholder="Filter by label or option&hellip;">
+        </div>
+        <div class="view-controls">
+          <button type="button" id="btnChoiceViewCard" class="btn-view is-active">Card</button>
+          <button type="button" id="btnChoiceViewList" class="btn-view">List</button>
+        </div>
       </div>
-      <div class="form-actions">
-        <button type="button" id="sceneCancelEditBtn" class="btn-cancel-edit" hidden>Cancel edit</button>
-        <button type="submit" class="btn-add" id="sceneSubmitBtn">+ Add Scene</button>
+      <div id="choicePointsList" class="choice-grid"></div>
+    </section>
+
+    <!-- ============ DATA ============ -->
+    <section class="page" id="page-data">
+      <div class="section-head">
+        <span class="eyebrow">Backup &amp; Transfer</span>
+        <h2>Data</h2>
+        <p class="section-desc">This site runs entirely in your browser &mdash; nothing is sent to a server. Download a backup, or bring one in from another device.</p>
       </div>
-    </form>
-
-    <div class="filter-wrap">
-      <input type="text" id="sceneFilter" class="table-filter" placeholder="Filter by name or note&hellip;">
-    </div>
-
-    <div class="manage-table-wrap">
-      <table class="manage-table" id="sceneTable">
-        <thead>
-          <tr>
-            <th data-sort="name">Name</th>
-            <th data-sort="note">Note</th>
-            <th data-sort="used" class="col-num">Used In</th>
-            <th class="col-actions">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="sceneTableBody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ============ CHOICES ============ -->
-  <section class="page" id="page-choices">
-    <div class="section-head">
-      <span class="eyebrow">Story Structure</span>
-      <h2>Choice Map</h2>
-      <p class="section-desc">Every branching point in the story, laid out in the order you meet it.</p>
-    </div>
-
-    <form class="manage-form" id="form-choice">
-      <div class="field field-grow">
-        <label for="cpLabelInput">Label</label>
-        <input id="cpLabelInput" type="text" placeholder="e.g. Choice 1" maxlength="40">
+      <div class="data-card">
+        <input type="file" id="importFile" accept="application/json" hidden>
+        <button id="exportBtn" class="btn-add" type="button">Save Current VN Data</button>
+        <button id="importBtn" class="btn-ghost" type="button">Upload Data File</button>
+        <button id="clearBtn" class="btn-danger-outline" type="button">Clear Current VN Data</button>
       </div>
-      <div class="field field-full">
-        <label>Options</label>
-        <div id="cpOptionsEditor" class="options-editor"></div>
-        <button type="button" id="cpAddOptionBtn" class="btn-add-row">+ Add Option</button>
-      </div>
-      <div class="form-actions">
-        <button type="button" id="cpCancelEditBtn" class="btn-cancel-edit" hidden>Cancel edit</button>
-        <button type="submit" class="btn-add" id="cpSubmitBtn">+ Add Choice</button>
-      </div>
-    </form>
+      <p class="data-hint">Data exported will only contain the routes, choices, and scenes for the currently selected Visual Novel.</p>
+    </section>
+  </main>
 
-    <div class="filter-header">
-      <div class="filter-wrap">
-        <input type="text" id="choiceFilter" class="table-filter" placeholder="Filter by label or option&hellip;">
-      </div>
-      <div class="view-controls">
-        <button type="button" id="btnChoiceViewCard" class="btn-view is-active">Card</button>
-        <button type="button" id="btnChoiceViewList" class="btn-view">List</button>
-      </div>
-    </div>
-
-    <div id="choicePointsList" class="choice-grid"></div>
-  </section>
-
-  <!-- ============ DATA ============ -->
-  <section class="page" id="page-data">
-    <div class="section-head">
-      <span class="eyebrow">Backup &amp; Transfer</span>
-      <h2>Data</h2>
-      <p class="section-desc">This site runs entirely in your browser &mdash; nothing is sent to a server. Download a backup, or bring one in from another device.</p>
-    </div>
-
-    <div class="data-card">
-      <input type="file" id="importFile" accept="application/json" hidden>
-      <button id="exportBtn" class="btn-add" type="button">Save Current VN Data</button>
-      <button id="importBtn" class="btn-ghost" type="button">Upload Data File</button>
-      <button id="clearBtn" class="btn-danger-outline" type="button">Clear Current VN Data</button>
-    </div>
-    <p class="data-hint">Data exported will only contain the routes, choices, and scenes for the currently selected Visual Novel.</p>
-  </section>
-
-</main>
-
-<div id="toast" class="toast" hidden></div>
-  
-<!-- ============ CUSTOM MODAL ============ -->
+  <!-- ============ CUSTOM MODAL ============ -->
   <div id="customModalOverlay" class="custom-modal-overlay" hidden>
     <div class="custom-modal-box">
       <div class="custom-modal-header" id="customModalTitle">Pesan</div>
@@ -208,6 +200,8 @@
       </div>
     </div>
   </div>
-<script src="script.js"></script>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="script.js"></script>
 </body>
 </html>
