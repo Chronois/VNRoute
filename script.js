@@ -865,62 +865,85 @@ function renderRouteStepsEditor() {
     `;
   }).join('');
 
-  // Event Listener Inputs
-  wrap.querySelectorAll('[data-role="step-cp"]').forEach((sel, i) => {
-    sel.addEventListener('change', () => { 
-      const cp = findCp(sel.value);
-      routeStepsDraft[i].choicePointId = sel.value; 
-      routeStepsDraft[i].optionId = cp?.options[0]?.id || ''; 
-      renderRouteStepsEditor(); 
-    });
-  });
-  wrap.querySelectorAll('[data-role="step-opt"]').forEach((sel, i) => {
-    sel.addEventListener('change', () => { routeStepsDraft[i].optionId = sel.value; });
-  });
-  wrap.querySelectorAll('[data-role="step-scene"]').forEach((sel, i) => {
-    sel.addEventListener('change', () => { routeStepsDraft[i].sceneId = sel.value; });
-  });
-  wrap.querySelectorAll('[data-role="step-title"]').forEach((inp, i) => {
-    inp.addEventListener('input', () => { routeStepsDraft[i].title = inp.value; });
-  });
-  wrap.querySelectorAll('[data-role="step-remove"]').forEach((btn, i) => {
-    btn.addEventListener('click', () => { routeStepsDraft.splice(i, 1); renderRouteStepsEditor(); });
-  });
-
-  // Drag and Drop
+  // Event Listener Inputs BUBBLING (Anti-Index Mismatch)
   wrap.querySelectorAll('.step-row').forEach(row => {
+    const i = parseInt(row.dataset.idx);
+
+    const selCp = row.querySelector('[data-role="step-cp"]');
+    if (selCp) {
+      selCp.addEventListener('change', () => { 
+        const cp = findCp(selCp.value);
+        routeStepsDraft[i].choicePointId = selCp.value; 
+        routeStepsDraft[i].optionId = cp?.options[0]?.id || ''; 
+        renderRouteStepsEditor(); 
+      });
+    }
+
+    const selOpt = row.querySelector('[data-role="step-opt"]');
+    if (selOpt) {
+      selOpt.addEventListener('change', () => { 
+        routeStepsDraft[i].optionId = selOpt.value; 
+      });
+    }
+
+    const selScene = row.querySelector('[data-role="step-scene"]');
+    if (selScene) {
+      selScene.addEventListener('change', () => { 
+        routeStepsDraft[i].sceneId = selScene.value; 
+      });
+    }
+
+    const inpTitle = row.querySelector('[data-role="step-title"]');
+    if (inpTitle) {
+      inpTitle.addEventListener('input', () => { 
+        routeStepsDraft[i].title = inpTitle.value; 
+      });
+    }
+
+    const btnRemove = row.querySelector('[data-role="step-remove"]');
+    if (btnRemove) {
+      btnRemove.addEventListener('click', () => { 
+        routeStepsDraft.splice(i, 1); 
+        renderRouteStepsEditor(); 
+      });
+    }
+
+    // Drag and Drop
     row.addEventListener('dragstart', (e) => { 
-      draggedStepIndex = parseInt(row.dataset.idx); 
+      draggedStepIndex = i; 
       row.classList.add('is-dragging'); 
       e.dataTransfer.effectAllowed = 'move'; 
     });
+    
     row.addEventListener('dragend', () => { 
       row.classList.remove('is-dragging'); 
       draggedStepIndex = null; 
       renderRouteStepsEditor(); 
     });
+    
     row.addEventListener('dragover', (e) => { 
       e.preventDefault(); 
       const r = row.getBoundingClientRect(); 
       if (e.clientY - (r.y + r.height / 2) > 0) { 
         row.style.borderBottom = "2px solid var(--primary-accent)"; 
-        row.style.borderTop = "1px solid var(--border)"; 
+        row.style.borderTop = ""; 
       } else { 
         row.style.borderTop = "2px solid var(--primary-accent)"; 
-        row.style.borderBottom = "1px solid var(--border)"; 
+        row.style.borderBottom = ""; 
       } 
     });
+    
     row.addEventListener('dragleave', () => { 
-      const borderColor = row.classList.contains('group-row') ? 'var(--gold)' : 'var(--border)';
-      row.style.borderTop = `1px solid ${borderColor}`; 
-      row.style.borderBottom = `1px solid ${borderColor}`; 
+      row.style.borderTop = ""; 
+      row.style.borderBottom = ""; 
     });
+    
     row.addEventListener('drop', (e) => {
       e.preventDefault(); 
-      if (draggedStepIndex === null || draggedStepIndex === parseInt(row.dataset.idx)) return;
+      if (draggedStepIndex === null || draggedStepIndex === i) return;
       
       const r = row.getBoundingClientRect(); 
-      let insertIndex = parseInt(row.dataset.idx) + (e.clientY - (r.y + r.height / 2) > 0 ? 1 : 0);
+      let insertIndex = i + (e.clientY - (r.y + r.height / 2) > 0 ? 1 : 0);
       if (draggedStepIndex < insertIndex) insertIndex--;
       
       routeStepsDraft.splice(insertIndex, 0, routeStepsDraft.splice(draggedStepIndex, 1)[0]);
