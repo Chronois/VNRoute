@@ -636,6 +636,10 @@ function renderRoutes() {
         <div class="route-card-head">
           <span class="route-name">${escapeHtml(r.name)}</span>
           <div class="footer-actions">
+            <!-- Fitur Baru: Tombol Copy Text & Duplicate -->
+            <button type="button" class="btn-icon" data-role="route-copytext" title="Copy Text to Clipboard">&#128203;</button>
+            <button type="button" class="btn-icon" data-role="route-duplicate" title="Duplicate Route">&#10064;</button>
+            
             <button type="button" class="btn-icon edit" data-role="route-edit" title="Edit">&#9998;</button>
             <button type="button" class="btn-icon del" data-role="route-del" title="Delete">&#10005;</button>
           </div>
@@ -646,11 +650,67 @@ function renderRoutes() {
     `;
   }).join('');
 
+  // Event Listener Default
   list.querySelectorAll('[data-role="route-edit"]').forEach(btn => {
     btn.addEventListener('click', () => loadRouteIntoForm(btn.closest('.route-card').dataset.id));
   });
   list.querySelectorAll('[data-role="route-del"]').forEach(btn => {
     btn.addEventListener('click', () => deleteRoute(btn.closest('.route-card').dataset.id));
+  });
+  
+  // Event Listener untuk Fitur Baru (Copy & Duplicate)
+  list.querySelectorAll('[data-role="route-copytext"]').forEach(btn => {
+    btn.addEventListener('click', () => copyRouteText(btn.closest('.route-card').dataset.id));
+  });
+  list.querySelectorAll('[data-role="route-duplicate"]').forEach(btn => {
+    btn.addEventListener('click', () => duplicateRoute(btn.closest('.route-card').dataset.id));
+  });
+}
+
+function duplicateRoute(id) {
+  const r = state.routes.find(x => x.id === id);
+  if (!r) return;
+  
+  editingRouteId = null; // Menjadikan rute ini rute baru, bukan override
+  document.getElementById('routeNameInput').value = r.name + ' (Copy)';
+  routeStepsDraft = r.steps.map(s => ({ ...s }));
+  renderRouteStepsEditor();
+  refreshRouteEndingSceneSelect(r.ending.sceneId);
+  document.getElementById('routeEndingType').value = r.ending.type;
+  
+  document.getElementById('routeSubmitBtn').textContent = '+ Record Route';
+  document.getElementById('routeCancelEditBtn').hidden = false;
+  document.getElementById('form-route').classList.add('is-editing');
+  document.getElementById('form-route').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('routeNameInput').focus();
+  
+  showToast('Rute diduplikasi ke editor! Silakan edit dan Record Route.');
+}
+
+function copyRouteText(id) {
+  const r = state.routes.find(x => x.id === id);
+  if (!r) return;
+  
+  let text = `Route: ${r.name}\n`;
+  text += `--------------------------\n`;
+  
+  r.steps.forEach((s) => {
+    const cp = findCp(s.choicePointId);
+    const opt = findOption(cp, s.optionId);
+    const scene = findScene(s.sceneId);
+    
+    if (cp) text += `[Choice] ${cp.label}: ${opt ? opt.text : '-'}\n`;
+    if (scene) text += `[Scene] ${scene.name}\n`;
+  });
+  
+  const endingScene = findScene(r.ending.sceneId);
+  text += `--------------------------\n`;
+  text += `Ending: ${endingScene ? endingScene.name : '-'} (${ENDING_LABELS[r.ending.type] || 'Normal End'})\n`;
+  
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Teks rute berhasil disalin ke clipboard! 📋');
+  }).catch(err => {
+    showToast('Gagal menyalin teks.');
   });
 }
 
