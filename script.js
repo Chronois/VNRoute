@@ -720,6 +720,8 @@ function sceneSelectOptions(selectedId, includeNone) {
   return html;
 }
 
+let draggedStepIndex = null;
+
 function renderRouteStepsEditor() {
   const wrap = document.getElementById('routeStepsEditor');
   
@@ -727,7 +729,6 @@ function renderRouteStepsEditor() {
     wrap.innerHTML = `<div class="empty-state" style="grid-column:auto">No steps added yet.</div>`;
   } else {
     wrap.innerHTML = routeStepsDraft.map((step, i) => {
-      // Pilihan Choice Point kini memiliki opsi kosong
       const cpOptionsHtml = `<option value="">— No Choice —</option>` + state.choicePoints.map(c => `<option value="${escapeAttr(c.id)}" ${c.id === step.choicePointId ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('');
       
       let optOptionsHtml = `<option value="">— No Option —</option>`;
@@ -737,7 +738,8 @@ function renderRouteStepsEditor() {
       }
 
       return `
-        <div class="step-row" data-idx="${i}">
+        <div class="step-row" data-idx="${i}" draggable="true">
+          <div class="drag-handle" title="Drag to reorder">&#8942;&#8942;</div>
           <select data-role="step-cp">${cpOptionsHtml}</select>
           <select data-role="step-opt" ${!cp ? 'disabled' : ''}>${optOptionsHtml}</select>
           <select data-role="step-scene">${sceneSelectOptions(step.sceneId, true)}</select>
@@ -746,6 +748,7 @@ function renderRouteStepsEditor() {
       `;
     }).join('');
 
+    // Trigger Perubahan Data Select
     wrap.querySelectorAll('[data-role="step-cp"]').forEach((sel, i) => {
       sel.addEventListener('change', () => {
         const cp = findCp(sel.value);
@@ -762,6 +765,62 @@ function renderRouteStepsEditor() {
     });
     wrap.querySelectorAll('[data-role="step-remove"]').forEach((btn, i) => {
       btn.addEventListener('click', () => { routeStepsDraft.splice(i, 1); renderRouteStepsEditor(); });
+    });
+
+    // EVENT LISTENER UNTUK DRAG AND DROP
+    wrap.querySelectorAll('.step-row').forEach(row => {
+      row.addEventListener('dragstart', (e) => {
+        draggedStepIndex = parseInt(row.dataset.idx);
+        row.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', draggedStepIndex);
+      });
+      
+      row.addEventListener('dragend', () => {
+        row.classList.remove('is-dragging');
+        draggedStepIndex = null;
+        renderRouteStepsEditor();
+      });
+
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const bounding = row.getBoundingClientRect();
+        const offset = bounding.y + (bounding.height / 2);
+        if (e.clientY - offset > 0) {
+          row.style.borderBottom = "2px solid var(--primary-accent)";
+          row.style.borderTop = "1px solid var(--border)";
+        } else {
+          row.style.borderTop = "2px solid var(--primary-accent)";
+          row.style.borderBottom = "1px solid var(--border)";
+        }
+      });
+
+      row.addEventListener('dragleave', () => {
+        row.style.borderTop = "1px solid var(--border)";
+        row.style.borderBottom = "1px solid var(--border)";
+      });
+
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (draggedStepIndex === null) return;
+        
+        const targetIndex = parseInt(row.dataset.idx);
+        if (draggedStepIndex === targetIndex) return;
+
+        const bounding = row.getBoundingClientRect();
+        const offset = bounding.y + (bounding.height / 2);
+        let insertIndex = targetIndex;
+        if (e.clientY - offset > 0) insertIndex++;
+        
+        if (draggedStepIndex < insertIndex) insertIndex--;
+
+        const newDraft = [...routeStepsDraft];
+        const item = newDraft.splice(draggedStepIndex, 1)[0];
+        newDraft.splice(insertIndex, 0, item);
+        routeStepsDraft = newDraft;
+        
+        renderRouteStepsEditor();
+      });
     });
   }
 }
