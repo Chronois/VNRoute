@@ -268,6 +268,8 @@ document.getElementById('btnDeleteVn').addEventListener('click', async () => {
    CHOICES
 ====================================================== */
 
+let draggedCpIndex = null;
+
 function renderChoicePoints() {
   const list = document.getElementById('choicePointsList');
   const q = document.getElementById('choiceFilter').value.trim().toLowerCase();
@@ -287,11 +289,14 @@ function renderChoicePoints() {
     return;
   }
 
+  const isFiltering = q.length > 0;
+
   list.innerHTML = filtered.map(cp => {
     const idx = state.choicePoints.indexOf(cp);
     const used = countRoutesUsingCp(cp.id);
     return `
-      <div class="cp-card" data-id="${escapeAttr(cp.id)}">
+      <div class="cp-card" data-idx="${idx}" data-id="${escapeAttr(cp.id)}" ${!isFiltering ? 'draggable="true"' : ''}>
+        ${!isFiltering ? '<div class="cp-drag-handle" title="Drag to reorder">&#8942;&#8942;</div>' : ''}
         <div class="cp-eyebrow">Choice ${String(idx + 1).padStart(2, '0')}</div>
         <div class="cp-label">${escapeHtml(cp.label)}</div>
         
@@ -307,6 +312,7 @@ function renderChoicePoints() {
 
         <div class="card-meta">${used ? `Used in ${used} route${used === 1 ? '' : 's'}` : 'Not used in any route yet'}</div>
         <div class="footer-actions">
+          <button type="button" class="btn-icon" data-role="cp-duplicate" title="Duplicate Choice">&#10064;</button>
           <button type="button" class="btn-icon edit" data-role="cp-edit" title="Edit">&#9998;</button>
           <button type="button" class="btn-icon del" data-role="cp-del" title="Delete">&#10005;</button>
         </div>
@@ -320,6 +326,76 @@ function renderChoicePoints() {
   list.querySelectorAll('[data-role="cp-del"]').forEach(btn => {
     btn.addEventListener('click', () => deleteCp(btn.closest('.cp-card').dataset.id));
   });
+  list.querySelectorAll('[data-role="cp-duplicate"]').forEach(btn => {
+    btn.addEventListener('click', () => duplicateChoice(btn.closest('.cp-card').dataset.id));
+  });
+
+  // DRAG AND DROP LOGIC FOR CHOICES
+  if (!isFiltering) {
+    list.querySelectorAll('.cp-card').forEach(card => {
+      card.addEventListener('dragstart', (e) => {
+        draggedCpIndex = parseInt(card.dataset.idx);
+        card.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      
+      card.addEventListener('dragend', () => {
+        card.classList.remove('is-dragging');
+        draggedCpIndex = null;
+        renderChoicePoints();
+      });
+
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        card.style.borderColor = "var(--primary-accent)";
+      });
+
+      card.addEventListener('dragleave', () => {
+        card.style.borderColor = "var(--border)";
+      });
+
+      card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (draggedCpIndex === null) return;
+        
+        const targetIndex = parseInt(card.dataset.idx);
+        if (draggedCpIndex === targetIndex) return;
+
+        const bounding = card.getBoundingClientRect();
+        const offset = bounding.x + (bounding.width / 2);
+        let insertIndex = targetIndex;
+        if (e.clientX - offset > 0) insertIndex++;
+        
+        if (draggedCpIndex < insertIndex) insertIndex--;
+
+        const newDraft = [...state.choicePoints];
+        const item = newDraft.splice(draggedCpIndex, 1)[0];
+        newDraft.splice(insertIndex, 0, item);
+        state.choicePoints = newDraft;
+        
+        saveState();
+        renderChoicePoints();
+      });
+    });
+  }
+}
+
+function duplicateChoice(id) {
+  const cp = state.choicePoints.find(x => x.id === id);
+  if (!cp) return;
+  
+  editingCpId = null;
+  document.getElementById('cpLabelInput').value = cp.label + ' (Copy)';
+  cpOptionsDraft = cp.options.map(o => ({ id: uid('opt'), text: o.text }));
+  renderCpOptionsEditor();
+  
+  document.getElementById('cpSubmitBtn').textContent = '+ Add Choice';
+  document.getElementById('cpCancelEditBtn').hidden = false;
+  document.getElementById('form-choice').classList.add('is-editing');
+  document.getElementById('form-choice').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('cpLabelInput').focus();
+  
+  showToast('Choice diduplikasi ke editor!');
 }
 
 function renderCpOptionsEditor() {
@@ -336,19 +412,14 @@ function renderCpOptionsEditor() {
   inputs.forEach((input, i) => {
     input.addEventListener('input', () => { cpOptionsDraft[i].text = input.value; });
     
-    // Fitur navigasi menggunakan Enter, PageDown, dan PageUp
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === 'PageDown') {
-        e.preventDefault(); // Mencegah form "Add Choice" tersubmit secara tidak sengaja
+        e.preventDefault(); 
         
         if (i < inputs.length - 1) {
-          // Pindah fokus ke input di bawahnya
           inputs[i + 1].focus(); 
         } else if (e.key === 'Enter') {
-          // Jika menekan Enter di baris paling terakhir, otomatis tambah baris baru
           document.getElementById('cpAddOptionBtn').click();
-          
-          // Tunggu sebentar agar elemen baru selesai dirender, lalu fokus ke elemen tersebut
           setTimeout(() => {
             const newInputs = document.getElementById('cpOptionsEditor').querySelectorAll('[data-role="opt-text"]');
             newInputs[newInputs.length - 1].focus();
@@ -356,11 +427,7 @@ function renderCpOptionsEditor() {
         }
       } else if (e.key === 'PageUp') {
         e.preventDefault();
-        
-        if (i > 0) {
-          // Pindah fokus ke input di atasnya
-          inputs[i - 1].focus();
-        }
+        if (i > 0) inputs[i - 1].focus();
       }
     });
   });
@@ -372,7 +439,7 @@ function renderCpOptionsEditor() {
 
 function resetCpForm() {
   editingCpId = null;
-  document.getElementById('cpLabelInput').value = `Choice ${state.choicePoints.length + 1}`;
+  document.getElementById('cpLabelInput').value = ''; // Label dikosongkan secara default
   cpOptionsDraft = [{ id: uid('opt'), text: '' }, { id: uid('opt'), text: '' }];
   renderCpOptionsEditor();
   document.getElementById('cpSubmitBtn').textContent = '+ Add Choice';
@@ -396,9 +463,19 @@ function loadCpIntoForm(id) {
 
 function submitCpForm(e) {
   e.preventDefault();
-  const label = document.getElementById('cpLabelInput').value.trim();
+  let label = document.getElementById('cpLabelInput').value.trim();
   const options = cpOptionsDraft.map(o => ({ id: o.id, text: o.text.trim() })).filter(o => o.text);
-  if (!label) { showToast('Give this choice point a label first.'); return; }
+  
+  // Fitur Label Otomatis jika dikosongkan
+  if (!label) { 
+    if (editingCpId) {
+      const idx = state.choicePoints.findIndex(c => c.id === editingCpId);
+      label = `Choice ${idx + 1}`;
+    } else {
+      label = `Choice ${state.choicePoints.length + 1}`;
+    }
+  }
+  
   if (!options.length) { showToast('Add at least one option.'); return; }
 
   if (editingCpId) {
@@ -609,7 +686,6 @@ function renderRoutes() {
       const scene = findScene(s.sceneId);
       let html = '';
       
-      // Render titik Choice jika ada
       if (s.choicePointId) {
         html += `<div class="thread-node is-choice">
           <span class="node-dot"></span>
@@ -618,7 +694,6 @@ function renderRoutes() {
         </div>`;
       }
       
-      // Render titik Scene jika ada
       if (s.sceneId) {
         html += `<div class="thread-node is-scene">
           <span class="node-dot"></span>
@@ -636,10 +711,7 @@ function renderRoutes() {
         <div class="route-card-head">
           <span class="route-name">${escapeHtml(r.name)}</span>
           <div class="footer-actions">
-            <!-- Fitur Baru: Tombol Copy Text & Duplicate -->
-            <button type="button" class="btn-icon" data-role="route-copytext" title="Copy Text to Clipboard">&#128203;</button>
             <button type="button" class="btn-icon" data-role="route-duplicate" title="Duplicate Route">&#10064;</button>
-            
             <button type="button" class="btn-icon edit" data-role="route-edit" title="Edit">&#9998;</button>
             <button type="button" class="btn-icon del" data-role="route-del" title="Delete">&#10005;</button>
           </div>
@@ -650,17 +722,11 @@ function renderRoutes() {
     `;
   }).join('');
 
-  // Event Listener Default
   list.querySelectorAll('[data-role="route-edit"]').forEach(btn => {
     btn.addEventListener('click', () => loadRouteIntoForm(btn.closest('.route-card').dataset.id));
   });
   list.querySelectorAll('[data-role="route-del"]').forEach(btn => {
     btn.addEventListener('click', () => deleteRoute(btn.closest('.route-card').dataset.id));
-  });
-  
-  // Event Listener untuk Fitur Baru (Copy & Duplicate)
-  list.querySelectorAll('[data-role="route-copytext"]').forEach(btn => {
-    btn.addEventListener('click', () => copyRouteText(btn.closest('.route-card').dataset.id));
   });
   list.querySelectorAll('[data-role="route-duplicate"]').forEach(btn => {
     btn.addEventListener('click', () => duplicateRoute(btn.closest('.route-card').dataset.id));
@@ -671,7 +737,7 @@ function duplicateRoute(id) {
   const r = state.routes.find(x => x.id === id);
   if (!r) return;
   
-  editingRouteId = null; // Menjadikan rute ini rute baru, bukan override
+  editingRouteId = null;
   document.getElementById('routeNameInput').value = r.name + ' (Copy)';
   routeStepsDraft = r.steps.map(s => ({ ...s }));
   renderRouteStepsEditor();
@@ -684,9 +750,8 @@ function duplicateRoute(id) {
   document.getElementById('form-route').scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.getElementById('routeNameInput').focus();
   
-  showToast('Rute diduplikasi ke editor! Silakan edit dan Record Route.');
+  showToast('Route duplicated to the editor! Please edit and Record Route.');
 }
-
 function copyRouteText(id) {
   const r = state.routes.find(x => x.id === id);
   if (!r) return;
