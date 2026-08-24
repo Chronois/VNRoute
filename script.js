@@ -330,9 +330,41 @@ function renderCpOptionsEditor() {
       <button type="button" class="row-remove" data-role="opt-remove" aria-label="Remove option">&#10005;</button>
     </div>
   `).join('');
-  wrap.querySelectorAll('[data-role="opt-text"]').forEach((input, i) => {
+  
+  const inputs = wrap.querySelectorAll('[data-role="opt-text"]');
+  
+  inputs.forEach((input, i) => {
     input.addEventListener('input', () => { cpOptionsDraft[i].text = input.value; });
+    
+    // Fitur navigasi menggunakan Enter, PageDown, dan PageUp
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === 'PageDown') {
+        e.preventDefault(); // Mencegah form "Add Choice" tersubmit secara tidak sengaja
+        
+        if (i < inputs.length - 1) {
+          // Pindah fokus ke input di bawahnya
+          inputs[i + 1].focus(); 
+        } else if (e.key === 'Enter') {
+          // Jika menekan Enter di baris paling terakhir, otomatis tambah baris baru
+          document.getElementById('cpAddOptionBtn').click();
+          
+          // Tunggu sebentar agar elemen baru selesai dirender, lalu fokus ke elemen tersebut
+          setTimeout(() => {
+            const newInputs = document.getElementById('cpOptionsEditor').querySelectorAll('[data-role="opt-text"]');
+            newInputs[newInputs.length - 1].focus();
+          }, 10);
+        }
+      } else if (e.key === 'PageUp') {
+        e.preventDefault();
+        
+        if (i > 0) {
+          // Pindah fokus ke input di atasnya
+          inputs[i - 1].focus();
+        }
+      }
+    });
   });
+  
   wrap.querySelectorAll('[data-role="opt-remove"]').forEach((btn, i) => {
     btn.addEventListener('click', () => { cpOptionsDraft.splice(i, 1); renderCpOptionsEditor(); });
   });
