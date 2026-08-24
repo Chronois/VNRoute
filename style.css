@@ -861,3 +861,52 @@ main { position: relative; z-index: 1; }
   justify-content: flex-end;
   gap: 12px;
 }
+
+/* ---------------------------------------------------
+   View Controls (Full / Simplified / List)
+--------------------------------------------------- */
+.filter-header { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; }
+.filter-header .filter-wrap { flex: 1; margin-bottom: 0; }
+.view-controls { 
+  display: flex; gap: 4px; background: rgba(14, 30, 61, 0.7); padding: 4px; 
+  border: 1px solid var(--border); 
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); 
+}
+.btn-view { 
+  background: transparent; border: none; color: var(--text-faint); padding: 10px 16px; 
+  font-family: var(--font-body); font-size: 13px; font-weight: 700; cursor: pointer; 
+  transition: all 0.2s; clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px); 
+}
+.btn-view:hover { color: var(--text); }
+.btn-view.is-active { background: var(--primary-accent); color: var(--ink); }
+
+/* Simplified Route */
+.route-card.is-simplified .thread,
+.route-card.is-simplified .ending-stamp { display: none; }
+.route-card.is-simplified { padding: 18px 24px; }
+.route-card.is-simplified .route-card-head { margin-bottom: 0; }
+
+.route-name-wrap { display: flex; align-items: center; gap: 12px; }
+.route-drag-handle { cursor: grab; color: var(--text-faint); font-size: 18px; line-height: 1; user-select: none; }
+.route-card.is-dragging { opacity: 0.5; transform: scale(0.98); border-color: var(--primary-accent); }
+
+/* Choice List View & Shared Header */
+.cp-header-area { display: flex; flex-direction: column; }
+.choice-grid:not(.list-view) .cp-drag-handle { position: absolute; top: 15px; right: 15px; z-index: 10; }
+
+.choice-grid.list-view { display: flex; flex-direction: column; gap: 12px; }
+.choice-grid.list-view .cp-card { 
+  display: flex; flex-direction: row; align-items: center; 
+  padding: 12px 20px; gap: 20px; 
+}
+.choice-grid.list-view .cp-header-area { flex-direction: row; align-items: center; gap: 14px; width: 220px; flex-shrink: 0; }
+.choice-grid.list-view .cp-drag-handle { position: static; }
+.choice-grid.list-view .cp-title-text { display: flex; flex-direction: column; }
+.choice-grid.list-view .cp-eyebrow { display: none; }
+.choice-grid.list-view .cp-label { margin: 0; font-size: 20px; }
+.choice-grid.list-view .fgo-options-container { flex: 1; flex-direction: row; flex-wrap: wrap; margin: 0; gap: 8px; }
+.choice-grid.list-view .fgo-button-wrap { flex: 1; min-width: 130px; max-width: 200px; }
+.choice-grid.list-view .fgo-button-inner { min-height: 40px; padding: 10px 14px; }
+.choice-grid.list-view .fgo-button-inner span { font-size: 15px; }
+.choice-grid.list-view .card-meta { display: none; }
+.choice-grid.list-view .footer-actions { margin-left: auto; }
