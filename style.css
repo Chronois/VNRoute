@@ -325,15 +325,43 @@ main { position: relative; z-index: 1; }
 .btn-danger-outline:hover { background: rgba(255, 107, 107, 0.3); color: #fff; }
 
 .btn-cancel-edit {
-  background: none;
-  border: none;
-  color: var(--text-faint);
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid var(--bad);
+  color: #ffcccc;
   font-family: var(--font-body);
-  font-size: 13px;
-  text-decoration: underline;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 24px;
   cursor: pointer;
-  padding: 8px;
+  height: fit-content;
+  white-space: nowrap;
+  outline: none;
+  text-decoration: none;
+  transition: all 0.2s var(--ease);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
 }
+.btn-cancel-edit:hover { 
+  background: rgba(255, 107, 107, 0.3); 
+  color: #fff; 
+}
+.cp-card.is-dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+  border-color: var(--primary-accent);
+}
+.cp-drag-handle {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  cursor: grab;
+  color: var(--text-faint);
+  font-size: 18px;
+  padding: 4px;
+  line-height: 1;
+  user-select: none;
+  z-index: 10;
+}
+.cp-drag-handle:active { cursor: grabbing; }
 .btn-cancel-edit:hover { color: var(--text); }
 
 .btn-add-row {
