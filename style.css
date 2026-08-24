@@ -243,21 +243,21 @@ main { position: relative; z-index: 1; }
 }
 
 /* ---------------------------------------------------
-   Route Group (Arc) Styling
+   Route Group (Arc) Styling - FGO Blue Theme
 --------------------------------------------------- */
-.step-actions { display: flex; gap: 10px; }
-.btn-add-group-row { border-color: var(--gold); color: var(--gold); }
-.btn-add-group-row:hover { background: rgba(212, 175, 106, 0.1); color: var(--gold); border-color: var(--gold); }
+.step-actions { display: flex; gap: 10px; margin-top: 8px; }
+.btn-add-group-row { border-color: var(--primary-accent); color: var(--primary-accent); }
+.btn-add-group-row:hover { background: rgba(110, 198, 255, 0.1); color: #fff; }
 
 .step-row.group-row {
-  background: rgba(212, 175, 106, 0.1);
-  border: 1px solid var(--gold);
+  background: rgba(42, 85, 153, 0.2);
+  border: 1px dashed var(--primary-accent);
 }
 .group-title-input {
   flex: 1;
   background: rgba(4, 9, 20, 0.9);
-  border: 1px solid var(--gold);
-  color: var(--gold);
+  border: 1px solid var(--border-strong);
+  color: var(--primary-accent);
   padding: 10px 12px;
   font-size: 15px;
   font-family: var(--font-display);
@@ -267,15 +267,15 @@ main { position: relative; z-index: 1; }
   transition: border-color 0.2s;
 }
 .group-title-input:focus { border-color: #fff; color: #fff; }
-.group-title-input::placeholder { color: rgba(212, 175, 106, 0.5); font-family: var(--font-body); font-weight: normal; font-size: 14px;}
+.group-title-input::placeholder { color: rgba(110, 198, 255, 0.5); font-family: var(--font-body); font-weight: normal; font-size: 14px;}
 
 .thread-group {
   font-family: var(--font-display);
-  color: var(--gold);
+  color: var(--primary-accent);
   font-size: 22px;
   font-weight: 700;
   margin: 24px 0 12px -20px;
-  border-bottom: 1px solid rgba(212, 175, 106, 0.3);
+  border-bottom: 1px solid rgba(110, 198, 255, 0.3);
   padding-bottom: 6px;
   display: flex;
   align-items: center;
