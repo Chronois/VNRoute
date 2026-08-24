@@ -14,7 +14,7 @@ let state = { choicePoints: [], scenes: [], routes: [] };
 let editingCpId = null, cpOptionsDraft = [];
 let editingSceneId = null;
 let editingRouteId = null, routeStepsDraft = [];
-let routeViewMode = 'full', choiceViewMode = 'card';
+let choiceViewMode = 'card';
 let draggedRouteIndex = null, draggedCpIndex = null, draggedStepIndex = null;
 let sceneSort = { key: 'name', dir: 'asc' };
 
@@ -314,12 +314,32 @@ function renderScenes() {
       <td>${escapeHtml(s.name)}</td>
       <td class="scene-note-cell">${escapeHtml(s.note || '—')}</td>
       <td class="col-num">${used}</td>
-      <td class="col-actions"><div class="footer-actions" style="justify-content:center"><button type="button" class="btn-icon edit" data-role="scene-edit">&#9998;</button><button type="button" class="btn-icon del" data-role="scene-del">&#10005;</button></div></td>
+      <td class="col-actions">
+        <div class="footer-actions" style="justify-content:center">
+          <button type="button" class="btn-icon" data-role="scene-duplicate" title="Duplicate">&#10064;</button>
+          <button type="button" class="btn-icon edit" data-role="scene-edit" title="Edit">&#9998;</button>
+          <button type="button" class="btn-icon del" data-role="scene-del" title="Delete">&#10005;</button>
+        </div>
+      </td>
     </tr>
   `).join('');
 
   tbody.querySelectorAll('[data-role="scene-edit"]').forEach(btn => btn.addEventListener('click', () => loadSceneIntoForm(btn.closest('tr').dataset.id)));
   tbody.querySelectorAll('[data-role="scene-del"]').forEach(btn => btn.addEventListener('click', () => deleteScene(btn.closest('tr').dataset.id)));
+  tbody.querySelectorAll('[data-role="scene-duplicate"]').forEach(btn => btn.addEventListener('click', () => duplicateScene(btn.closest('tr').dataset.id)));
+}
+
+function duplicateScene(id) {
+  const s = findScene(id); if (!s) return;
+  editingSceneId = null; 
+  document.getElementById('sceneNameInput').value = s.name + ' (Copy)'; 
+  document.getElementById('sceneNoteInput').value = s.note || '';
+  document.getElementById('sceneSubmitBtn').textContent = '+ Add Scene'; 
+  document.getElementById('sceneCancelEditBtn').hidden = false;
+  document.getElementById('form-scene').classList.add('is-editing'); 
+  document.getElementById('form-scene').scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+  document.getElementById('sceneNameInput').focus();
+  showToast('Scene duplicated!');
 }
 
 function initSceneSort() {
@@ -382,8 +402,8 @@ function renderRoutes() {
 
     const ending = findScene(r.ending.sceneId);
     return `
-      <div class="route-card ${routeViewMode === 'simple' ? 'is-simplified' : ''}" data-idx="${idx}" data-id="${escapeAttr(r.id)}" ${!isFiltering ? 'draggable="true"' : ''}>
-        <div class="route-card-head">
+      <div class="route-card ${r.isSimplified ? 'is-simplified' : ''}" data-idx="${idx}" data-id="${escapeAttr(r.id)}" ${!isFiltering ? 'draggable="true"' : ''}>
+        <div class="route-card-head" title="Double click to minimize/maximize">
           <div class="route-name-wrap">
             ${!isFiltering ? '<div class="route-drag-handle" title="Drag to reorder">&#8942;&#8942;</div>' : ''}
             <span class="route-name">${escapeHtml(r.name)}</span>
@@ -400,9 +420,19 @@ function renderRoutes() {
     `;
   }).join('');
 
-  list.querySelectorAll('[data-role="route-edit"]').forEach(btn => btn.addEventListener('click', () => loadRouteIntoForm(btn.closest('.route-card').dataset.id)));
-  list.querySelectorAll('[data-role="route-del"]').forEach(btn => btn.addEventListener('click', () => deleteRoute(btn.closest('.route-card').dataset.id)));
-  list.querySelectorAll('[data-role="route-duplicate"]').forEach(btn => btn.addEventListener('click', () => duplicateRoute(btn.closest('.route-card').dataset.id)));
+  list.querySelectorAll('[data-role="route-edit"]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); loadRouteIntoForm(btn.closest('.route-card').dataset.id); }));
+  list.querySelectorAll('[data-role="route-del"]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteRoute(btn.closest('.route-card').dataset.id); }));
+  list.querySelectorAll('[data-role="route-duplicate"]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); duplicateRoute(btn.closest('.route-card').dataset.id); }));
+
+  // DOUBLE CLICK TO TOGGLE SIMPLIFIED
+  list.querySelectorAll('.route-card-head').forEach(head => {
+    head.addEventListener('dblclick', (e) => {
+      if(e.target.closest('.footer-actions') || e.target.closest('.route-drag-handle')) return;
+      const card = head.closest('.route-card');
+      const r = state.routes.find(x => x.id === card.dataset.id);
+      if (r) { r.isSimplified = !r.isSimplified; saveState(); renderRoutes(); }
+    });
+  });
 
   if (!isFiltering) {
     list.querySelectorAll('.route-card').forEach(card => {
@@ -563,12 +593,6 @@ function initEvents() {
   document.getElementById('sceneCancelEditBtn').addEventListener('click', resetSceneForm);
   document.getElementById('sceneFilter').addEventListener('input', renderScenes);
 
-  const btnRouteFull = document.getElementById('btnRouteViewFull'), btnRouteSimple = document.getElementById('btnRouteViewSimple');
-  if (btnRouteFull && btnRouteSimple) {
-    btnRouteFull.addEventListener('click', () => { routeViewMode = 'full'; btnRouteFull.classList.add('is-active'); btnRouteSimple.classList.remove('is-active'); renderRoutes(); });
-    btnRouteSimple.addEventListener('click', () => { routeViewMode = 'simple'; btnRouteSimple.classList.add('is-active'); btnRouteFull.classList.remove('is-active'); renderRoutes(); });
-  }
-  
   const btnChoiceCard = document.getElementById('btnChoiceViewCard'), btnChoiceList = document.getElementById('btnChoiceViewList');
   if (btnChoiceCard && btnChoiceList) {
     btnChoiceCard.addEventListener('click', () => { choiceViewMode = 'card'; btnChoiceCard.classList.add('is-active'); btnChoiceList.classList.remove('is-active'); renderChoicePoints(); });
