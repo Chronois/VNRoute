@@ -835,7 +835,7 @@ function renderRouteStepsEditor() {
   wrap.innerHTML = routeStepsDraft.map((step, i) => {
     const cpOptionsHtml = `<option value="">— No Choice —</option>` + 
       state.choicePoints.map(c => {
-        const dropLabel = c.label ? c.label : `(Choice - ${c.options[0]?.text || 'Empty'})`;
+        const dropLabel = c.label ? c.label : `Choice`;
         return `<option value="${escapeAttr(c.id)}" ${c.id === step.choicePointId ? 'selected' : ''}>${escapeHtml(dropLabel)}</option>`;
       }).join('');
     
