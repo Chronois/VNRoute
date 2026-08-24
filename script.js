@@ -161,13 +161,17 @@ function renderChoicePoints() {
   list.innerHTML = filtered.map(cp => {
     const idx = state.choicePoints.indexOf(cp);
     const used = countRoutesUsingCp(cp.id);
+    
+    // PERBAIKAN: Jika data label terlanjur kosong, otomatis tampilkan "Choice X"
+    const displayLabel = cp.label ? cp.label : `Choice ${idx + 1}`;
+
     return `
       <div class="cp-card" data-idx="${idx}" data-id="${escapeAttr(cp.id)}" ${!isFiltering ? 'draggable="true"' : ''}>
         <div class="cp-header-area">
           ${!isFiltering ? '<div class="cp-drag-handle" title="Drag to reorder">&#8942;&#8942;</div>' : ''}
           <div class="cp-title-text">
             <div class="cp-eyebrow">Choice ${String(idx + 1).padStart(2, '0')}</div>
-            <div class="cp-label">${escapeHtml(cp.label)}</div>
+            <div class="cp-label">${escapeHtml(displayLabel)}</div>
           </div>
         </div>
         <div class="fgo-options-container">
@@ -204,32 +208,6 @@ function renderChoicePoints() {
       });
     });
   }
-}
-
-function renderCpOptionsEditor() {
-  const wrap = document.getElementById('cpOptionsEditor');
-  wrap.innerHTML = cpOptionsDraft.map((o, i) => `
-    <div class="option-row" data-idx="${i}">
-      <input type="text" value="${escapeAttr(o.text)}" placeholder="Option text" data-role="opt-text">
-      <button type="button" class="row-remove" data-role="opt-remove" aria-label="Remove option">&#10005;</button>
-    </div>
-  `).join('');
-  
-  const inputs = wrap.querySelectorAll('[data-role="opt-text"]');
-  inputs.forEach((input, i) => {
-    input.addEventListener('input', () => { cpOptionsDraft[i].text = input.value; });
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === 'PageDown') {
-        e.preventDefault(); 
-        if (i < inputs.length - 1) inputs[i + 1].focus(); 
-        else if (e.key === 'Enter') {
-          document.getElementById('cpAddOptionBtn').click();
-          setTimeout(() => { const ni = wrap.querySelectorAll('[data-role="opt-text"]'); ni[ni.length - 1].focus(); }, 10);
-        }
-      } else if (e.key === 'PageUp') { e.preventDefault(); if (i > 0) inputs[i - 1].focus(); }
-    });
-  });
-  wrap.querySelectorAll('[data-role="opt-remove"]').forEach((btn, i) => btn.addEventListener('click', () => { cpOptionsDraft.splice(i, 1); renderCpOptionsEditor(); }));
 }
 
 function resetCpForm() {
@@ -269,15 +247,26 @@ function submitCpForm(e) {
   let label = document.getElementById('cpLabelInput').value.trim();
   const options = cpOptionsDraft.map(o => ({ id: o.id, text: o.text.trim() })).filter(o => o.text);
   
-  if (!label) label = `Choice ${editingCpId ? state.choicePoints.findIndex(c => c.id === editingCpId) + 1 : state.choicePoints.length + 1}`;
   if (!options.length) return showToast('Add at least one option.');
 
   if (editingCpId) {
-    const cp = findCp(editingCpId); cp.label = label; cp.options = options; showToast('Choice updated.');
+    const cp = findCp(editingCpId);
+    const idx = state.choicePoints.indexOf(cp);
+    
+    cp.label = label ? label : `Choice ${idx + 1}`;
+    cp.options = options;
+    showToast('Choice updated.');
   } else {
-    state.choicePoints.push({ id: uid('cp'), label, options }); showToast('Choice added.');
+    const finalLabel = label ? label : `Choice ${state.choicePoints.length + 1}`;
+    state.choicePoints.push({ id: uid('cp'), label: finalLabel, options });
+    showToast('Choice added.');
   }
-  saveState(); resetCpForm(); renderChoicePoints(); renderUtilBar(); refreshRouteFormChoicePointRefs();
+  
+  saveState(); 
+  resetCpForm(); 
+  renderChoicePoints(); 
+  renderUtilBar(); 
+  refreshRouteFormChoicePointRefs();
 }
 
 async function deleteCp(id) {
