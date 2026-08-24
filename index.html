@@ -81,8 +81,14 @@
       </div>
     </form>
 
-    <div class="filter-wrap">
-      <input type="text" id="routeFilter" class="table-filter" placeholder="Search by scene, choice or ending&hellip;">
+    <div class="filter-header">
+      <div class="filter-wrap">
+        <input type="text" id="routeFilter" class="table-filter" placeholder="Search by scene, choice or ending&hellip;">
+      </div>
+      <div class="view-controls">
+        <button type="button" id="btnRouteViewFull" class="btn-view is-active">Full</button>
+        <button type="button" id="btnRouteViewSimple" class="btn-view">Simplified</button>
+      </div>
     </div>
 
     <div id="routesList" class="routes-list"></div>
@@ -154,8 +160,14 @@
       </div>
     </form>
 
-    <div class="filter-wrap">
-      <input type="text" id="choiceFilter" class="table-filter" placeholder="Filter by label or option&hellip;">
+    <div class="filter-header">
+      <div class="filter-wrap">
+        <input type="text" id="choiceFilter" class="table-filter" placeholder="Filter by label or option&hellip;">
+      </div>
+      <div class="view-controls">
+        <button type="button" id="btnChoiceViewCard" class="btn-view is-active">Card</button>
+        <button type="button" id="btnChoiceViewList" class="btn-view">List</button>
+      </div>
     </div>
 
     <div id="choicePointsList" class="choice-grid"></div>
