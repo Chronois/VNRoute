@@ -1154,6 +1154,7 @@ function initEvents() {
   // Routes
   document.getElementById('form-route').addEventListener('submit', submitRouteForm);
   document.getElementById('routeAddStepBtn').addEventListener('click', addRouteStep);
+   document.getElementById('routeAddGroupBtn').addEventListener('click', addRouteGroup);
   document.getElementById('routeCancelEditBtn').addEventListener('click', resetRouteForm);
   document.getElementById('routeFilter').addEventListener('input', renderRoutes);
 
