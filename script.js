@@ -280,7 +280,6 @@ function renderChoicePoints() {
   list.innerHTML = filtered.map(cp => {
     const idx = state.choicePoints.indexOf(cp);
     const used = countRoutesUsingCp(cp.id);
-    const displayLabel = cp.label || `Choice ${idx + 1}`;
 
     return `
       <div class="cp-card" data-idx="${idx}" data-id="${escapeAttr(cp.id)}" ${!isFiltering ? 'draggable="true"' : ''}>
@@ -288,7 +287,7 @@ function renderChoicePoints() {
           ${!isFiltering ? '<div class="cp-drag-handle" title="Drag to reorder">&#8942;&#8942;</div>' : ''}
           <div class="cp-title-text">
             <div class="cp-eyebrow">Choice ${String(idx + 1).padStart(2, '0')}</div>
-            <div class="cp-label">${escapeHtml(displayLabel)}</div>
+            ${cp.label ? `<div class="cp-label">${escapeHtml(cp.label)}</div>` : ''}
           </div>
         </div>
         
@@ -437,7 +436,7 @@ function duplicateChoice(id) {
   if (!cp) return;
   
   editingCpId = null; 
-  document.getElementById('cpLabelInput').value = cp.label + ' (Copy)';
+  document.getElementById('cpLabelInput').value = cp.label ? cp.label + ' (Copy)' : '';
   cpOptionsDraft = cp.options.map(o => ({ id: uid('opt'), text: o.text })); 
   renderCpOptionsEditor();
   
@@ -461,13 +460,11 @@ function submitCpForm(e) {
 
   if (editingCpId) {
     const cp = findCp(editingCpId);
-    const idx = state.choicePoints.indexOf(cp);
-    cp.label = label || `Choice ${idx + 1}`;
+    cp.label = label; // Tidak ada lagi auto-generate
     cp.options = options;
     showToast('Choice updated.');
   } else {
-    const finalLabel = label || `Choice ${state.choicePoints.length + 1}`;
-    state.choicePoints.push({ id: uid('cp'), label: finalLabel, options });
+    state.choicePoints.push({ id: uid('cp'), label: label, options }); // Tidak ada lagi auto-generate
     showToast('Choice added.');
   }
   
@@ -711,7 +708,7 @@ function renderRoutes() {
         html += `
           <div class="thread-node is-choice">
             <span class="node-dot"></span>
-            <span class="node-choice-label">${escapeHtml(cp?.label || 'Deleted choice')}</span>
+            ${cp && cp.label ? `<span class="node-choice-label">${escapeHtml(cp.label)}</span>` : (!cp ? `<span class="node-choice-label">Deleted choice</span>` : '')}
             <span class="node-option-text">${escapeHtml(opt?.text || 'Deleted option')}</span>
           </div>`;
       }
@@ -766,7 +763,6 @@ function renderRoutes() {
     });
   });
 
-  // Double Click Toggle Simplified
   list.querySelectorAll('.route-card-head').forEach(head => {
     head.addEventListener('dblclick', (e) => {
       if(e.target.closest('.footer-actions') || e.target.closest('.route-drag-handle')) return;
@@ -780,7 +776,6 @@ function renderRoutes() {
     });
   });
 
-  // Drag and drop for Routes
   if (!isFiltering) {
     list.querySelectorAll('.route-card').forEach(card => {
       card.addEventListener('dragstart', (e) => { 
@@ -839,7 +834,10 @@ function renderRouteStepsEditor() {
   
   wrap.innerHTML = routeStepsDraft.map((step, i) => {
     const cpOptionsHtml = `<option value="">— No Choice —</option>` + 
-      state.choicePoints.map(c => `<option value="${escapeAttr(c.id)}" ${c.id === step.choicePointId ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('');
+      state.choicePoints.map(c => {
+        const dropLabel = c.label ? c.label : `(Choice - ${c.options[0]?.text || 'Empty'})`;
+        return `<option value="${escapeAttr(c.id)}" ${c.id === step.choicePointId ? 'selected' : ''}>${escapeHtml(dropLabel)}</option>`;
+      }).join('');
     
     const cp = findCp(step.choicePointId);
     let optOptionsHtml = `<option value="">— No Option —</option>`;
@@ -922,7 +920,6 @@ function renderRouteStepsEditor() {
     });
   });
 }
-
 function addRouteStep() { 
   routeStepsDraft.push({ choicePointId: '', optionId: '', sceneId: '' }); 
   renderRouteStepsEditor(); 
