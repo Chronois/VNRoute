@@ -392,6 +392,25 @@ function renderCpOptionsEditor() {
       } else if (e.key === 'PageUp') { 
         e.preventDefault(); 
         if (i > 0) inputs[i - 1].focus(); 
+      } else if (e.key === 'Backspace') {
+
+        if (input.value === '') {
+          e.preventDefault();
+          if (cpOptionsDraft.length > 1) {
+            cpOptionsDraft.splice(i, 1);
+            renderCpOptionsEditor();
+            setTimeout(() => {
+              const newInputs = document.getElementById('cpOptionsEditor').querySelectorAll('[data-role="opt-text"]');
+              if (i > 0) newInputs[i - 1].focus();
+              else if (newInputs.length > 0) newInputs[0].focus();
+            }, 10);
+          }
+        } 
+
+        else if (input.selectionStart === 0 && input.selectionEnd === 0) {
+          e.preventDefault();
+          if (i > 0) inputs[i - 1].focus();
+        }
       }
     });
   });
@@ -676,7 +695,9 @@ function renderRoutes() {
         const cp = findCp(s.choicePointId); 
         const opt = findOption(cp, s.optionId); 
         const scene = findScene(s.sceneId);
-        return [cp?.label || '', opt?.text || '', scene?.name || ''].join(' ');
+        const cpIdx = cp ? state.choicePoints.indexOf(cp) : -1;
+        const labelStr = cp ? (cp.label || `Choice ${cpIdx + 1}`) : '';
+        return [labelStr, opt?.text || '', scene?.name || ''].join(' ');
       })
     ].join(' ').toLowerCase();
     
@@ -705,10 +726,15 @@ function renderRoutes() {
       
       let html = '';
       if (s.choicePointId) {
+        let cpLabel = 'Deleted choice';
+        if (cp) {
+          const cpIdx = state.choicePoints.indexOf(cp);
+          cpLabel = cp.label || `Choice ${cpIdx + 1}`;
+        }
         html += `
           <div class="thread-node is-choice">
             <span class="node-dot"></span>
-            ${cp && cp.label ? `<span class="node-choice-label">${escapeHtml(cp.label)}</span>` : (!cp ? `<span class="node-choice-label">Deleted choice</span>` : '')}
+            <span class="node-choice-label">${escapeHtml(cpLabel)}</span>
             <span class="node-option-text">${escapeHtml(opt?.text || 'Deleted option')}</span>
           </div>`;
       }
@@ -834,9 +860,9 @@ function renderRouteStepsEditor() {
   
   wrap.innerHTML = routeStepsDraft.map((step, i) => {
     const cpOptionsHtml = `<option value="">— No Choice —</option>` + 
-      state.choicePoints.map(c => {
-        const dropLabel = c.label ? c.label : `Choice`;
-        return `<option value="${escapeAttr(c.id)}" ${c.id === step.choicePointId ? 'selected' : ''}>${escapeHtml(dropLabel)}</option>`;
+      state.choicePoints.map((c, idx) => {
+        const displayLabel = c.label || `Choice ${idx + 1}`;
+        return `<option value="${escapeAttr(c.id)}" ${c.id === step.choicePointId ? 'selected' : ''}>${escapeHtml(displayLabel)}</option>`;
       }).join('');
     
     const cp = findCp(step.choicePointId);
@@ -920,6 +946,7 @@ function renderRouteStepsEditor() {
     });
   });
 }
+
 function addRouteStep() { 
   routeStepsDraft.push({ choicePointId: '', optionId: '', sceneId: '' }); 
   renderRouteStepsEditor(); 
