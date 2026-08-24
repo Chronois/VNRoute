@@ -692,6 +692,7 @@ function renderRoutes() {
       r.name, 
       endingScene?.name || '', 
       ...r.steps.map(s => {
+        if (s.type === 'group') return s.title || '';
         const cp = findCp(s.choicePointId); 
         const opt = findOption(cp, s.optionId); 
         const scene = findScene(s.sceneId);
@@ -720,6 +721,12 @@ function renderRoutes() {
     const idx = state.routes.indexOf(r);
     
     const stepsHtml = r.steps.map(s => {
+      // Jika bertipe group (Arc)
+      if (s.type === 'group') {
+        return `<div class="thread-group">${escapeHtml(s.title || 'Unnamed Arc')}</div>`;
+      }
+
+      // Jika bertipe step biasa
       const cp = findCp(s.choicePointId); 
       const opt = findOption(cp, s.optionId); 
       const scene = findScene(s.sceneId);
@@ -771,22 +778,13 @@ function renderRoutes() {
   }).join('');
 
   list.querySelectorAll('[data-role="route-edit"]').forEach(btn => {
-    btn.addEventListener('click', (e) => { 
-      e.stopPropagation(); 
-      loadRouteIntoForm(btn.closest('.route-card').dataset.id); 
-    });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); loadRouteIntoForm(btn.closest('.route-card').dataset.id); });
   });
   list.querySelectorAll('[data-role="route-del"]').forEach(btn => {
-    btn.addEventListener('click', (e) => { 
-      e.stopPropagation(); 
-      deleteRoute(btn.closest('.route-card').dataset.id); 
-    });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); deleteRoute(btn.closest('.route-card').dataset.id); });
   });
   list.querySelectorAll('[data-role="route-duplicate"]').forEach(btn => {
-    btn.addEventListener('click', (e) => { 
-      e.stopPropagation(); 
-      duplicateRoute(btn.closest('.route-card').dataset.id); 
-    });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); duplicateRoute(btn.closest('.route-card').dataset.id); });
   });
 
   list.querySelectorAll('.route-card-head').forEach(head => {
@@ -794,49 +792,24 @@ function renderRoutes() {
       if(e.target.closest('.footer-actions') || e.target.closest('.route-drag-handle')) return;
       const card = head.closest('.route-card');
       const r = state.routes.find(x => x.id === card.dataset.id);
-      if (r) { 
-        r.isSimplified = !r.isSimplified; 
-        saveState(); 
-        renderRoutes(); 
-      }
+      if (r) { r.isSimplified = !r.isSimplified; saveState(); renderRoutes(); }
     });
   });
 
   if (!isFiltering) {
     list.querySelectorAll('.route-card').forEach(card => {
-      card.addEventListener('dragstart', (e) => { 
-        draggedRouteIndex = parseInt(card.dataset.idx); 
-        card.classList.add('is-dragging'); 
-        e.dataTransfer.effectAllowed = 'move'; 
-      });
-      card.addEventListener('dragend', () => { 
-        card.classList.remove('is-dragging'); 
-        draggedRouteIndex = null; 
-        renderRoutes(); 
-      });
-      card.addEventListener('dragover', (e) => { 
-        e.preventDefault(); 
-        card.style.borderColor = "var(--primary-accent)"; 
-      });
-      card.addEventListener('dragleave', () => { 
-        card.style.borderColor = "var(--border)"; 
-      });
+      card.addEventListener('dragstart', (e) => { draggedRouteIndex = parseInt(card.dataset.idx); card.classList.add('is-dragging'); e.dataTransfer.effectAllowed = 'move'; });
+      card.addEventListener('dragend', () => { card.classList.remove('is-dragging'); draggedRouteIndex = null; renderRoutes(); });
+      card.addEventListener('dragover', (e) => { e.preventDefault(); card.style.borderColor = "var(--primary-accent)"; });
+      card.addEventListener('dragleave', () => { card.style.borderColor = "var(--border)"; });
       card.addEventListener('drop', (e) => {
         e.preventDefault();
         if (draggedRouteIndex === null || draggedRouteIndex === parseInt(card.dataset.idx)) return;
-        
         const rect = card.getBoundingClientRect();
         let insertIndex = parseInt(card.dataset.idx) + (e.clientY - (rect.y + rect.height / 2) > 0 ? 1 : 0);
-        
         if (draggedRouteIndex < insertIndex) insertIndex--;
-        
-        const newDraft = [...state.routes];
-        const item = newDraft.splice(draggedRouteIndex, 1)[0];
-        newDraft.splice(insertIndex, 0, item);
-        state.routes = newDraft;
-        
-        saveState(); 
-        renderRoutes();
+        state.routes.splice(insertIndex, 0, state.routes.splice(draggedRouteIndex, 1)[0]);
+        saveState(); renderRoutes();
       });
     });
   }
@@ -844,9 +817,7 @@ function renderRoutes() {
 
 function sceneSelectOptions(selectedId, includeNone) {
   let html = includeNone ? `<option value="">— none —</option>` : '';
-  html += state.scenes.map(s => 
-    `<option value="${escapeAttr(s.id)}" ${s.id === selectedId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`
-  ).join('');
+  html += state.scenes.map(s => `<option value="${escapeAttr(s.id)}" ${s.id === selectedId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
   return html;
 }
 
@@ -859,6 +830,18 @@ function renderRouteStepsEditor() {
   }
   
   wrap.innerHTML = routeStepsDraft.map((step, i) => {
+    // Render jika tipenya adalah Group (Arc)
+    if (step.type === 'group') {
+      return `
+        <div class="step-row group-row" data-idx="${i}" draggable="true">
+          <div class="drag-handle" title="Drag to reorder">&#8942;&#8942;</div>
+          <input type="text" class="group-title-input" data-role="step-title" value="${escapeAttr(step.title || '')}" placeholder="Group Name (e.g. Arc 1, Chapter 1)">
+          <button type="button" class="row-remove" data-role="step-remove" aria-label="Remove step">&#10005;</button>
+        </div>
+      `;
+    }
+
+    // Render jika tipenya adalah Step Biasa
     const cpOptionsHtml = `<option value="">— No Choice —</option>` + 
       state.choicePoints.map((c, idx) => {
         const displayLabel = c.label || `Choice ${idx + 1}`;
@@ -882,6 +865,7 @@ function renderRouteStepsEditor() {
     `;
   }).join('');
 
+  // Event Listener Inputs
   wrap.querySelectorAll('[data-role="step-cp"]').forEach((sel, i) => {
     sel.addEventListener('change', () => { 
       const cp = findCp(sel.value);
@@ -891,22 +875,19 @@ function renderRouteStepsEditor() {
     });
   });
   wrap.querySelectorAll('[data-role="step-opt"]').forEach((sel, i) => {
-    sel.addEventListener('change', () => { 
-      routeStepsDraft[i].optionId = sel.value; 
-    });
+    sel.addEventListener('change', () => { routeStepsDraft[i].optionId = sel.value; });
   });
   wrap.querySelectorAll('[data-role="step-scene"]').forEach((sel, i) => {
-    sel.addEventListener('change', () => { 
-      routeStepsDraft[i].sceneId = sel.value; 
-    });
+    sel.addEventListener('change', () => { routeStepsDraft[i].sceneId = sel.value; });
+  });
+  wrap.querySelectorAll('[data-role="step-title"]').forEach((inp, i) => {
+    inp.addEventListener('input', () => { routeStepsDraft[i].title = inp.value; });
   });
   wrap.querySelectorAll('[data-role="step-remove"]').forEach((btn, i) => {
-    btn.addEventListener('click', () => { 
-      routeStepsDraft.splice(i, 1); 
-      renderRouteStepsEditor(); 
-    });
+    btn.addEventListener('click', () => { routeStepsDraft.splice(i, 1); renderRouteStepsEditor(); });
   });
 
+  // Drag and Drop
   wrap.querySelectorAll('.step-row').forEach(row => {
     row.addEventListener('dragstart', (e) => { 
       draggedStepIndex = parseInt(row.dataset.idx); 
@@ -930,8 +911,9 @@ function renderRouteStepsEditor() {
       } 
     });
     row.addEventListener('dragleave', () => { 
-      row.style.borderTop = "1px solid var(--border)"; 
-      row.style.borderBottom = "1px solid var(--border)"; 
+      const borderColor = row.classList.contains('group-row') ? 'var(--gold)' : 'var(--border)';
+      row.style.borderTop = `1px solid ${borderColor}`; 
+      row.style.borderBottom = `1px solid ${borderColor}`; 
     });
     row.addEventListener('drop', (e) => {
       e.preventDefault(); 
@@ -948,7 +930,12 @@ function renderRouteStepsEditor() {
 }
 
 function addRouteStep() { 
-  routeStepsDraft.push({ choicePointId: '', optionId: '', sceneId: '' }); 
+  routeStepsDraft.push({ type: 'step', choicePointId: '', optionId: '', sceneId: '' }); 
+  renderRouteStepsEditor(); 
+}
+
+function addRouteGroup() { 
+  routeStepsDraft.push({ type: 'group', title: '' }); 
   renderRouteStepsEditor(); 
 }
 
@@ -967,7 +954,7 @@ function refreshRouteFormSceneRefs() {
 function resetRouteForm() {
   editingRouteId = null; 
   document.getElementById('routeNameInput').value = ''; 
-  routeStepsDraft = [{ choicePointId: '', optionId: '', sceneId: '' }];
+  routeStepsDraft = [{ type: 'step', choicePointId: '', optionId: '', sceneId: '' }];
   
   renderRouteStepsEditor(); 
   refreshRouteEndingSceneSelect(''); 
@@ -1022,15 +1009,19 @@ function submitRouteForm(e) {
 
   if (!name) return showToast('Give this route a name.');
   
-  const validSteps = routeStepsDraft.filter(s => s.choicePointId || s.sceneId);
-  if (!validSteps.length) return showToast('Add at least one choice or scene step.');
+  // Validasi: Abaikan step kosong dan grup tanpa nama
+  const validSteps = routeStepsDraft.filter(s => {
+    if (s.type === 'group') return s.title && s.title.trim() !== '';
+    return s.choicePointId || s.sceneId;
+  });
+  
+  if (!validSteps.length) return showToast('Add at least one valid step or group.');
   if (!endingSceneId) return showToast('Pick the scene this route ends on.');
 
-  const steps = validSteps.map(s => ({ 
-    choicePointId: s.choicePointId || '', 
-    optionId: s.optionId || '', 
-    sceneId: s.sceneId || '' 
-  }));
+  const steps = validSteps.map(s => {
+    if (s.type === 'group') return { type: 'group', title: s.title.trim() };
+    return { type: 'step', choicePointId: s.choicePointId || '', optionId: s.optionId || '', sceneId: s.sceneId || '' };
+  });
   
   if (editingRouteId) {
     const r = state.routes.find(x => x.id === editingRouteId); 
