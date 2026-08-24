@@ -181,7 +181,7 @@ main { position: relative; z-index: 1; }
 .route-card { background: var(--surface); border: 1px solid var(--border); padding: 24px; position: relative; clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); transition: border-color 0.2s var(--ease); }
 .route-card:hover { border-color: var(--primary-accent); }
 .route-card::before { content: ''; position: absolute; top: 0; left: 12px; right: 0; height: 2px; background: var(--border-strong); }
-.route-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.route-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 20px; cursor: pointer; user-select: none; }
 .route-name { font-family: var(--font-display); font-size: 24px; font-weight: 600; color: #fff; }
 
 .route-card.is-simplified .thread, .route-card.is-simplified .ending-stamp { display: none; }
