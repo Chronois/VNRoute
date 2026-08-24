@@ -20,6 +20,10 @@ let cpOptionsDraft = [];
 let editingSceneId = null;
 let editingRouteId = null;
 let routeStepsDraft = [];
+let routeViewMode = 'full';
+let choiceViewMode = 'card';
+let draggedRouteIndex = null;
+let draggedCpIndex = null;
 let sceneSort = { key: 'name', dir: 'asc' };
 
 /* ---------------- Custom Modal Logic ---------------- */
@@ -273,6 +277,9 @@ let draggedCpIndex = null;
 function renderChoicePoints() {
   const list = document.getElementById('choicePointsList');
   const q = document.getElementById('choiceFilter').value.trim().toLowerCase();
+  
+  if (choiceViewMode === 'list') list.classList.add('list-view');
+  else list.classList.remove('list-view');
 
   const filtered = state.choicePoints.filter(cp => {
     if (!q) return true;
@@ -280,14 +287,8 @@ function renderChoicePoints() {
     return hay.includes(q);
   });
 
-  if (!state.choicePoints.length) {
-    list.innerHTML = `<div class="empty-state"><strong>No choice points yet</strong>Add the first branching moment from the game using the form above.</div>`;
-    return;
-  }
-  if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state">No choice points match &ldquo;${escapeHtml(q)}&rdquo;.</div>`;
-    return;
-  }
+  if (!state.choicePoints.length) { list.innerHTML = `<div class="empty-state"><strong>No choice points yet</strong>Add the first branching moment from the game using the form above.</div>`; return; }
+  if (!filtered.length) { list.innerHTML = `<div class="empty-state">No choice points match &ldquo;${escapeHtml(q)}&rdquo;.</div>`; return; }
 
   const isFiltering = q.length > 0;
 
@@ -296,16 +297,18 @@ function renderChoicePoints() {
     const used = countRoutesUsingCp(cp.id);
     return `
       <div class="cp-card" data-idx="${idx}" data-id="${escapeAttr(cp.id)}" ${!isFiltering ? 'draggable="true"' : ''}>
-        ${!isFiltering ? '<div class="cp-drag-handle" title="Drag to reorder">&#8942;&#8942;</div>' : ''}
-        <div class="cp-eyebrow">Choice ${String(idx + 1).padStart(2, '0')}</div>
-        <div class="cp-label">${escapeHtml(cp.label)}</div>
+        <div class="cp-header-area">
+          ${!isFiltering ? '<div class="cp-drag-handle" title="Drag to reorder">&#8942;&#8942;</div>' : ''}
+          <div class="cp-title-text">
+            <div class="cp-eyebrow">Choice ${String(idx + 1).padStart(2, '0')}</div>
+            <div class="cp-label">${escapeHtml(cp.label)}</div>
+          </div>
+        </div>
         
         <div class="fgo-options-container">
           ${cp.options.map(o => `
             <div class="fgo-button-wrap">
-              <div class="fgo-button-inner">
-                <span>${escapeHtml(o.text)}</span>
-              </div>
+              <div class="fgo-button-inner"><span>${escapeHtml(o.text)}</span></div>
             </div>
           `).join('')}
         </div>
@@ -320,61 +323,36 @@ function renderChoicePoints() {
     `;
   }).join('');
 
-  list.querySelectorAll('[data-role="cp-edit"]').forEach(btn => {
-    btn.addEventListener('click', () => loadCpIntoForm(btn.closest('.cp-card').dataset.id));
-  });
-  list.querySelectorAll('[data-role="cp-del"]').forEach(btn => {
-    btn.addEventListener('click', () => deleteCp(btn.closest('.cp-card').dataset.id));
-  });
-  list.querySelectorAll('[data-role="cp-duplicate"]').forEach(btn => {
-    btn.addEventListener('click', () => duplicateChoice(btn.closest('.cp-card').dataset.id));
-  });
+  list.querySelectorAll('[data-role="cp-edit"]').forEach(btn => { btn.addEventListener('click', () => loadCpIntoForm(btn.closest('.cp-card').dataset.id)); });
+  list.querySelectorAll('[data-role="cp-del"]').forEach(btn => { btn.addEventListener('click', () => deleteCp(btn.closest('.cp-card').dataset.id)); });
+  list.querySelectorAll('[data-role="cp-duplicate"]').forEach(btn => { btn.addEventListener('click', () => duplicateChoice(btn.closest('.cp-card').dataset.id)); });
 
-  // DRAG AND DROP LOGIC FOR CHOICES
+  // DRAG AND DROP FOR CHOICES
   if (!isFiltering) {
     list.querySelectorAll('.cp-card').forEach(card => {
-      card.addEventListener('dragstart', (e) => {
-        draggedCpIndex = parseInt(card.dataset.idx);
-        card.classList.add('is-dragging');
-        e.dataTransfer.effectAllowed = 'move';
-      });
-      
-      card.addEventListener('dragend', () => {
-        card.classList.remove('is-dragging');
-        draggedCpIndex = null;
-        renderChoicePoints();
-      });
-
-      card.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        card.style.borderColor = "var(--primary-accent)";
-      });
-
-      card.addEventListener('dragleave', () => {
-        card.style.borderColor = "var(--border)";
-      });
-
+      card.addEventListener('dragstart', (e) => { draggedCpIndex = parseInt(card.dataset.idx); card.classList.add('is-dragging'); e.dataTransfer.effectAllowed = 'move'; });
+      card.addEventListener('dragend', () => { card.classList.remove('is-dragging'); draggedCpIndex = null; renderChoicePoints(); });
+      card.addEventListener('dragover', (e) => { e.preventDefault(); card.style.borderColor = "var(--primary-accent)"; });
+      card.addEventListener('dragleave', () => { card.style.borderColor = "var(--border)"; });
       card.addEventListener('drop', (e) => {
         e.preventDefault();
         if (draggedCpIndex === null) return;
-        
         const targetIndex = parseInt(card.dataset.idx);
         if (draggedCpIndex === targetIndex) return;
-
         const bounding = card.getBoundingClientRect();
-        const offset = bounding.x + (bounding.width / 2);
         let insertIndex = targetIndex;
-        if (e.clientX - offset > 0) insertIndex++;
-        
+        // Gunakan posisi X atau Y tergantung viewMode
+        if (choiceViewMode === 'list') {
+            if (e.clientY - (bounding.y + bounding.height / 2) > 0) insertIndex++;
+        } else {
+            if (e.clientX - (bounding.x + bounding.width / 2) > 0) insertIndex++;
+        }
         if (draggedCpIndex < insertIndex) insertIndex--;
-
         const newDraft = [...state.choicePoints];
         const item = newDraft.splice(draggedCpIndex, 1)[0];
         newDraft.splice(insertIndex, 0, item);
         state.choicePoints = newDraft;
-        
-        saveState();
-        renderChoicePoints();
+        saveState(); renderChoicePoints();
       });
     });
   }
@@ -657,49 +635,25 @@ function renderRoutes() {
   const filtered = state.routes.filter(r => {
     if (!q) return true;
     const endingScene = findScene(r.ending.sceneId);
-    const hay = [
-      r.name,
-      endingScene ? endingScene.name : '',
-      ...r.steps.map(s => {
-        const cp = findCp(s.choicePointId);
-        const opt = findOption(cp, s.optionId);
-        const scene = findScene(s.sceneId);
+    const hay = [ r.name, endingScene ? endingScene.name : '', ...r.steps.map(s => {
+        const cp = findCp(s.choicePointId); const opt = findOption(cp, s.optionId); const scene = findScene(s.sceneId);
         return [cp ? cp.label : '', opt ? opt.text : '', scene ? scene.name : ''].join(' ');
-      })
-    ].join(' ').toLowerCase();
+      })].join(' ').toLowerCase();
     return hay.includes(q);
   });
 
-  if (!state.routes.length) {
-    list.innerHTML = `<div class="empty-state"><strong>The book is empty</strong>Record your first playthrough using the form above.</div>`;
-    return;
-  }
-  if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state">No routes match &ldquo;${escapeHtml(q)}&rdquo;.</div>`;
-    return;
-  }
+  if (!state.routes.length) { list.innerHTML = `<div class="empty-state"><strong>The book is empty</strong>Record your first playthrough using the form above.</div>`; return; }
+  if (!filtered.length) { list.innerHTML = `<div class="empty-state">No routes match &ldquo;${escapeHtml(q)}&rdquo;.</div>`; return; }
+
+  const isFiltering = q.length > 0;
 
   list.innerHTML = filtered.map(r => {
+    const idx = state.routes.indexOf(r);
     const stepsHtml = r.steps.map(s => {
-      const cp = findCp(s.choicePointId);
-      const opt = findOption(cp, s.optionId);
-      const scene = findScene(s.sceneId);
+      const cp = findCp(s.choicePointId); const opt = findOption(cp, s.optionId); const scene = findScene(s.sceneId);
       let html = '';
-      
-      if (s.choicePointId) {
-        html += `<div class="thread-node is-choice">
-          <span class="node-dot"></span>
-          <span class="node-choice-label">${escapeHtml(cp ? cp.label : 'Deleted choice')}</span>
-          <span class="node-option-text">${escapeHtml(opt ? opt.text : 'Deleted option')}</span>
-        </div>`;
-      }
-      
-      if (s.sceneId) {
-        html += `<div class="thread-node is-scene">
-          <span class="node-dot"></span>
-          <span class="node-scene-text">${escapeHtml(scene ? scene.name : 'Deleted scene')}</span>
-        </div>`;
-      }
+      if (s.choicePointId) { html += `<div class="thread-node is-choice"><span class="node-dot"></span><span class="node-choice-label">${escapeHtml(cp ? cp.label : 'Deleted choice')}</span><span class="node-option-text">${escapeHtml(opt ? opt.text : 'Deleted option')}</span></div>`; }
+      if (s.sceneId) { html += `<div class="thread-node is-scene"><span class="node-dot"></span><span class="node-scene-text">${escapeHtml(scene ? scene.name : 'Deleted scene')}</span></div>`; }
       return html;
     }).join('');
 
@@ -707,9 +661,12 @@ function renderRoutes() {
     const type = ENDING_LABELS[r.ending.type] ? r.ending.type : 'normal';
 
     return `
-      <div class="route-card" data-id="${escapeAttr(r.id)}">
+      <div class="route-card ${routeViewMode === 'simple' ? 'is-simplified' : ''}" data-idx="${idx}" data-id="${escapeAttr(r.id)}" ${!isFiltering ? 'draggable="true"' : ''}>
         <div class="route-card-head">
-          <span class="route-name">${escapeHtml(r.name)}</span>
+          <div class="route-name-wrap">
+            ${!isFiltering ? '<div class="route-drag-handle" title="Drag to reorder">&#8942;&#8942;</div>' : ''}
+            <span class="route-name">${escapeHtml(r.name)}</span>
+          </div>
           <div class="footer-actions">
             <button type="button" class="btn-icon" data-role="route-duplicate" title="Duplicate Route">&#10064;</button>
             <button type="button" class="btn-icon edit" data-role="route-edit" title="Edit">&#9998;</button>
@@ -722,15 +679,34 @@ function renderRoutes() {
     `;
   }).join('');
 
-  list.querySelectorAll('[data-role="route-edit"]').forEach(btn => {
-    btn.addEventListener('click', () => loadRouteIntoForm(btn.closest('.route-card').dataset.id));
-  });
-  list.querySelectorAll('[data-role="route-del"]').forEach(btn => {
-    btn.addEventListener('click', () => deleteRoute(btn.closest('.route-card').dataset.id));
-  });
-  list.querySelectorAll('[data-role="route-duplicate"]').forEach(btn => {
-    btn.addEventListener('click', () => duplicateRoute(btn.closest('.route-card').dataset.id));
-  });
+  list.querySelectorAll('[data-role="route-edit"]').forEach(btn => { btn.addEventListener('click', () => loadRouteIntoForm(btn.closest('.route-card').dataset.id)); });
+  list.querySelectorAll('[data-role="route-del"]').forEach(btn => { btn.addEventListener('click', () => deleteRoute(btn.closest('.route-card').dataset.id)); });
+  list.querySelectorAll('[data-role="route-duplicate"]').forEach(btn => { btn.addEventListener('click', () => duplicateRoute(btn.closest('.route-card').dataset.id)); });
+
+  // DRAG AND DROP ROUTES
+  if (!isFiltering) {
+    list.querySelectorAll('.route-card').forEach(card => {
+      card.addEventListener('dragstart', (e) => { draggedRouteIndex = parseInt(card.dataset.idx); card.classList.add('is-dragging'); e.dataTransfer.effectAllowed = 'move'; });
+      card.addEventListener('dragend', () => { card.classList.remove('is-dragging'); draggedRouteIndex = null; renderRoutes(); });
+      card.addEventListener('dragover', (e) => { e.preventDefault(); card.style.borderColor = "var(--primary-accent)"; });
+      card.addEventListener('dragleave', () => { card.style.borderColor = "var(--border)"; });
+      card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (draggedRouteIndex === null) return;
+        const targetIndex = parseInt(card.dataset.idx);
+        if (draggedRouteIndex === targetIndex) return;
+        const bounding = card.getBoundingClientRect();
+        let insertIndex = targetIndex;
+        if (e.clientY - (bounding.y + bounding.height / 2) > 0) insertIndex++;
+        if (draggedRouteIndex < insertIndex) insertIndex--;
+        const newDraft = [...state.routes];
+        const item = newDraft.splice(draggedRouteIndex, 1)[0];
+        newDraft.splice(insertIndex, 0, item);
+        state.routes = newDraft;
+        saveState(); renderRoutes();
+      });
+    });
+  }
 }
 
 function duplicateRoute(id) {
@@ -1072,6 +1048,20 @@ function initEvents() {
   document.getElementById('form-scene').addEventListener('submit', submitSceneForm);
   document.getElementById('sceneCancelEditBtn').addEventListener('click', resetSceneForm);
   document.getElementById('sceneFilter').addEventListener('input', renderScenes);
+   // View Toggles Setup
+  const btnRouteFull = document.getElementById('btnRouteViewFull');
+  const btnRouteSimple = document.getElementById('btnRouteViewSimple');
+  if (btnRouteFull && btnRouteSimple) {
+    btnRouteFull.addEventListener('click', () => { routeViewMode = 'full'; btnRouteFull.classList.add('is-active'); btnRouteSimple.classList.remove('is-active'); renderRoutes(); });
+    btnRouteSimple.addEventListener('click', () => { routeViewMode = 'simple'; btnRouteSimple.classList.add('is-active'); btnRouteFull.classList.remove('is-active'); renderRoutes(); });
+  }
+  
+  const btnChoiceCard = document.getElementById('btnChoiceViewCard');
+  const btnChoiceList = document.getElementById('btnChoiceViewList');
+  if (btnChoiceCard && btnChoiceList) {
+    btnChoiceCard.addEventListener('click', () => { choiceViewMode = 'card'; btnChoiceCard.classList.add('is-active'); btnChoiceList.classList.remove('is-active'); renderChoicePoints(); });
+    btnChoiceList.addEventListener('click', () => { choiceViewMode = 'list'; btnChoiceList.classList.add('is-active'); btnChoiceCard.classList.remove('is-active'); renderChoicePoints(); });
+  }
   initSceneSort();
 
   document.getElementById('form-route').addEventListener('submit', submitRouteForm);
